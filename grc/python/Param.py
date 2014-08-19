@@ -58,7 +58,7 @@ class Param(_Param, _GUIParam):
         'complex_vector', 'real_vector', 'float_vector', 'int_vector',
         'hex', 'string', 'bool',
         'file_open', 'file_save',
-        'id', 'stream_id',
+        'id', 'block_id', 'stream_id',
         'grid_pos', 'notebook', 'gui_hint',
         'import',
     )
@@ -146,6 +146,7 @@ class Param(_Param, _GUIParam):
                 'hex': Constants.INT_COLOR_SPEC,
                 'string': Constants.BYTE_VECTOR_COLOR_SPEC,
                 'id': Constants.ID_COLOR_SPEC,
+                'block_id': Constants.ID_COLOR_SPEC,
                 'stream_id': Constants.ID_COLOR_SPEC,
                 'grid_pos': Constants.INT_VECTOR_COLOR_SPEC,
                 'notebook': Constants.INT_VECTOR_COLOR_SPEC,
@@ -287,13 +288,17 @@ class Param(_Param, _GUIParam):
         #########################
         # Unique ID Type
         #########################
-        elif t == 'id':
+        elif t in ('id', 'block_id'):
             #can python use this as a variable?
             if not _check_id_matcher.match(v):
                 raise Exception, 'ID "%s" must begin with a letter and may contain letters, numbers, and underscores.'%v
-            ids = [param.get_value() for param in self.get_all_params(t)]
-            if ids.count(v) > 1: #id should only appear once, or zero times if block is disabled
-                raise Exception, 'ID "%s" is not unique.'%v
+            ids = [param.get_value() for param in self.get_all_params('id')]
+            if t == 'block_id':
+                if v not in ids:
+                    raise Exception, 'ID "%s" is not found.'%v
+            else:
+                if ids.count(v) > 1: #id should only appear once, or zero times if block is disabled
+                    raise Exception, 'ID "%s" is not unique.'%v
             if v in ID_BLACKLIST:
                 raise Exception, 'ID "%s" is blacklisted.'%v
             return v
