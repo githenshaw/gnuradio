@@ -76,7 +76,8 @@ class TopBlockGenerator(object):
         filename = self._flow_graph.get_option('id') + '.py'
         self._file_path = os.path.join(dirname, filename)
 
-    def get_file_path(self): return self._file_path
+    def get_file_path(self):
+        return self._file_path
 
     def write(self):
         #do throttle warning
@@ -115,7 +116,7 @@ class TopBlockGenerator(object):
         #   python_exe = 'pythonw'
 
         #setup the command args to run
-        cmds = [python_exe, '-u', self.get_file_path()] #-u is unbuffered stdio
+        cmds = [python_exe, '-u', self.get_file_path()]  # -u is unbuffered stdio
 
         #when in no gui mode on linux, use an xterm (looks nice)
         if self._generate_options == 'no_gui' and 'linux' in sys.platform.lower():
@@ -163,7 +164,7 @@ class TopBlockGenerator(object):
         #list of variable names
         var_ids = [var.get_id() for var in parameters + variables]
         #prepend self.
-        replace_dict = dict([(var_id, 'self.%s'%var_id) for var_id in var_ids])
+        replace_dict = dict([(var_id, 'self.%s' % var_id) for var_id in var_ids])
         #list of callbacks
         callbacks = [
             expr_utils.expr_replace(cb, replace_dict)
@@ -198,17 +199,13 @@ class HierBlockGenerator(TopBlockGenerator):
 
     def __init__(self, flow_graph, file_path):
         TopBlockGenerator.__init__(self, flow_graph, file_path)
-
         self._mode = HIER_BLOCK_FILE_MODE
-
-        dirname = HIER_BLOCKS_LIB_DIR
-        filename = self._flow_graph.get_option('id')
-
-        self._file_path = os.path.join(dirname, filename + '.py')
+        self._file_path = os.path.join(HIER_BLOCKS_LIB_DIR,
+                                       self._flow_graph.get_option('id') + '.py')
         self._file_path_xml = self._file_path + '.xml'
 
-    def get_file_path(self): return self._file_path
-    def get_file_path_xml(self): return self._file_path_xml
+    def get_file_path_xml(self):
+        return self._file_path_xml
 
     def write(self):
         TopBlockGenerator.write(self)
@@ -216,98 +213,85 @@ class HierBlockGenerator(TopBlockGenerator):
         ParseXML.validate_dtd(self.get_file_path_xml(), BLOCK_DTD)
 
     def _build_block_n_from_flow_graph_io(self):
-        flow_graph = self._flow_graph
-        python_file = self.get_file_path()
+        """
+        Generate a block XML from the flow graph IO
 
+        Returns:
+            a xml node tree
+        """
         #extract info from the flow graph
-        input_sigs = flow_graph.get_io_signaturev('in')
-        output_sigs = flow_graph.get_io_signaturev('out')
-        input_msgp = flow_graph.get_msg_pad_sources();
-        output_msgp = flow_graph.get_msg_pad_sinks();
-        parameters = flow_graph.get_parameters()
-        bussink = flow_graph.get_bussink()
-        bussrc = flow_graph.get_bussrc()
-        bus_struct_sink = flow_graph.get_bus_structure_sink()
-        bus_struct_src = flow_graph.get_bus_structure_src()
-        block_key = flow_graph.get_option('id')
-        block_name = flow_graph.get_option('title') or flow_graph.get_option('id').replace('_', ' ').title()
-        block_category = flow_graph.get_option('category')
-        block_desc = flow_graph.get_option('description')
-        block_author = flow_graph.get_option('author')
+        block_key = self._flow_graph.get_option('id')
+        parameters = self._flow_graph.get_parameters()
+
+        def var_or_value(name):
+            if name in map(lambda p: p.get_id(), parameters):
+                return "$"+name
+            return name
+
         #build the nested data
         block_n = odict()
-        block_n['name'] = block_name
+        block_n['name'] = self._flow_graph.get_option('title') or \
+                          self._flow_graph.get_option('id').replace('_', ' ').title()
         block_n['key'] = block_key
-        block_n['category'] = block_category
-        block_n['import'] = 'execfile("%s")'%python_file
+        block_n['category'] = self._flow_graph.get_option('category')
+        block_n['import'] = 'execfile("%s")' % self.get_file_path()
         #make data
-        if parameters: block_n['make'] = '%s(\n    %s,\n)'%(
-            block_key,
-            ',\n    '.join(['%s=$%s'%(param.get_id(), param.get_id()) for param in parameters]),
-        )
-        else: block_n['make'] = '%s()'%block_key
+        if parameters:
+            block_n['make'] = '%s(\n    %s,\n)' % (
+                block_key,
+                ',\n    '.join('{0}=${0}' % param.get_id() for param in parameters),
+            )
+        else:
+            block_n['make'] = '%s()' % block_key
         #callback data
-        block_n['callback'] = ['set_%s($%s)'%(param.get_id(), param.get_id()) for param in parameters]
-        #param data
-        params_n = list()
+        block_n['callback'] = [
+            'set_{0}(${0})'.format(param.get_id()) for param in parameters
+        ]
+
+        # Parameters
+        block_n['param'] = list()
         for param in parameters:
             param_n = odict()
             param_n['name'] = param.get_param('label').get_value() or param.get_id()
             param_n['key'] = param.get_id()
             param_n['value'] = param.get_param('value').get_value()
             param_n['type'] = 'raw'
-            params_n.append(param_n)
-        block_n['param'] = params_n
-        #sink data stream ports
-        if bussink:
-            block_n['bus_sink'] = '1';
-        if bussrc:
-            block_n['bus_source'] = '1';
-        block_n['sink'] = list()
-        for input_sig in input_sigs:
-            sink_n = odict()
-            sink_n['name'] = input_sig['label']
-            sink_n['type'] = input_sig['type']
-            sink_n['vlen'] = var_or_value(input_sig['vlen'], parameters)
-            if input_sig['optional']: sink_n['optional'] = '1'
-            block_n['sink'].append(sink_n)
-        #sink data msg ports
-        for input_sig in input_msgp:
-            sink_n = odict()
-            sink_n['name'] = input_sig.get_param("label").get_value();
-            sink_n['type'] = "message"
-            sink_n['optional'] = input_sig.get_param("optional").get_value();
-            block_n['sink'].append(sink_n)
-        #source data stream ports
-        block_n['source'] = list()
+            block_n['param'].append(param_n)
+
+        # bus stuff
+        if self._flow_graph.get_bussink():
+            block_n['bus_sink'] = '1'
+        if self._flow_graph.get_bussrc():
+            block_n['bus_source'] = '1'
+
+        # sink/source ports
+        for direction in ('sink', 'source'):
+            block_n[direction] = list()
+            for port in self._flow_graph.get_hier_block_io(direction):
+                port_n = odict()
+                port_n['name'] = port['label']
+                port_n['type'] = port['type']
+                if port['type'] != "message":
+                    port_n['vlen'] = var_or_value(port['vlen'])
+                if port['optional']:
+                    port_n['optional'] = '1'
+                block_n[direction].append(port_n)
+
+        # more bus stuff
+        bus_struct_sink = self._flow_graph.get_bus_structure_sink()
         if bus_struct_sink:
-            block_n['bus_structure_sink'] = bus_struct_sink[0].get_param('struct').get_value();
+            block_n['bus_structure_sink'] = bus_struct_sink[0].get_param('struct').get_value()
+        bus_struct_src = self._flow_graph.get_bus_structure_src()
         if bus_struct_src:
-            block_n['bus_structure_source'] = bus_struct_src[0].get_param('struct').get_value();
-        for output_sig in output_sigs:
-            source_n = odict()
-            source_n['name'] = output_sig['label']
-            source_n['type'] = output_sig['type']
-            source_n['vlen'] = var_or_value(output_sig['vlen'], parameters)
-            if output_sig['optional']: source_n['optional'] = '1'
-            block_n['source'].append(source_n)
-        #source data msg ports
-        for output_sig in output_msgp:
-            source_n = odict()
-            source_n['name'] = output_sig.get_param("label").get_value();
-            source_n['type'] = "message"
-            source_n['optional'] = output_sig.get_param("optional").get_value();
-            block_n['source'].append(source_n)
-        #doc data
-        block_n['doc'] = "%s\n%s\n%s"%(block_author, block_desc, python_file)
-        block_n['grc_source'] = "%s"%(flow_graph.grc_file_path)
-        #write the block_n to file
+            block_n['bus_structure_source'] = bus_struct_src[0].get_param('struct').get_value()
+
+        # documentation
+        block_n['doc'] = "\n".join((
+            self._flow_graph.get_option('author'),
+            self._flow_graph.get_option('description'),
+            self.get_file_path()
+        ))
+        block_n['grc_source'] = str(self._flow_graph.grc_file_path)
+
         n = {'block': block_n}
         return n
-
-
-def var_or_value(name, parameters):
-    if name in map(lambda p: p.get_id(), parameters):
-        return "$"+name
-    return name
-
