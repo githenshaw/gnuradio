@@ -29,7 +29,7 @@ import random
 import Messages
 pygtk.require('2.0')
 
-from .. python.FlowGraph import FlowGraph as FlowGraphModel
+from .. model.FlowGraph import FlowGraph as FlowGraphModel
 
 
 class FlowGraph(Element, FlowGraphModel):

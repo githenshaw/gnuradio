@@ -32,7 +32,7 @@ import gtk
 PORT_MARKUP_TMPL="""\
 <span foreground="black" font_desc="$font">$encode($port.get_name())</span>"""
 
-from .. python.Port import Port as PortModel
+from .. model.Port import Port as PortModel
 
 class Port(Element, PortModel):
     """The graphical port."""

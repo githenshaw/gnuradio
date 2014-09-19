@@ -24,7 +24,6 @@ import tempfile
 
 from Cheetah.Template import Template
 
-from .. gui import Messages
 from . base import ParseXML, odict
 from . Constants import TOP_BLOCK_FILE_MODE, FLOW_GRAPH_TEMPLATE, \
     XTERM_EXECUTABLE, HIER_BLOCK_FILE_MODE, HIER_BLOCKS_LIB_DIR, BLOCK_DTD
@@ -74,22 +73,24 @@ class TopBlockGenerator(object):
             dirname = tempfile.gettempdir()
         filename = self._flow_graph.get_option('id') + '.py'
         self._file_path = os.path.join(dirname, filename)
+        self.warnings = []
 
     def get_file_path(self):
         return self._file_path
 
     def write(self):
+        del self.warnings[:]
         #do throttle warning
         throttling_blocks = filter(lambda b: b.throttle(), self._flow_graph.get_enabled_blocks())
         if not throttling_blocks and self._generate_options != 'hb':
-            Messages.send_warning("This flow graph may not have flow control: "
+            self.warnings.append("This flow graph may not have flow control: "
                                   "no audio or RF hardware blocks found. "
                                   "Add a Misc->Throttle block to your flow "
                                   "graph to avoid CPU congestion.")
         if len(throttling_blocks) > 1:
             keys = set(map(lambda b: b.get_key(), throttling_blocks))
             if len(keys) > 1 and 'blocks_throttle' in keys:
-                Messages.send_warning("This flow graph contains a throttle "
+                self.warnings.append("This flow graph contains a throttle "
                                       "block and another rate limiting block, "
                                       "e.g. a hardware source or sink. "
                                       "This is usually undesired. Consider "

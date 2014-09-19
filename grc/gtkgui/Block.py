@@ -22,7 +22,7 @@ import pygtk
 from Element import Element
 import Utils
 import Colors
-from .. python.base import odict
+from .. model.base import odict
 from Constants import BORDER_PROXIMITY_SENSITIVITY
 from Constants import \
     BLOCK_LABEL_PADDING, \
@@ -34,7 +34,7 @@ pygtk.require('2.0')
 import gtk
 import pango
 
-from .. python.Block import Block as BlockModel
+from .. model.Block import Block as BlockModel
 
 BLOCK_MARKUP_TMPL="""\
 #set $foreground = $block.is_valid() and 'black' or 'red'

@@ -28,7 +28,7 @@ import subprocess
 import Preferences
 from threading import Thread
 import Messages
-from .. python.base import ParseXML
+from .. model.base import ParseXML
 from MainWindow import MainWindow
 from PropsDialog import PropsDialog
 from ParserErrorsDialog import ParserErrorsDialog
@@ -484,6 +484,8 @@ class ActionHandler:
                     try:
                         Messages.send_start_gen(generator.get_file_path())
                         generator.write()
+                        for warning in generator.warnings:
+                            Messages.send_warning(warning)
                     except Exception,e: Messages.send_fail_gen(e)
                 else: self.generator = None
         elif action == Actions.FLOW_GRAPH_EXEC:

@@ -24,8 +24,8 @@ from . Block import Block as _Block
 from . Port import Port as _Port
 from . Param import Param as _Param
 
-from .. python.Platform import Platform as PlatformModel
-from .. python.Constants import PREFS_FILE
+from .. model.Platform import Platform as PlatformModel
+from .. model.Constants import PREFS_FILE
 
 
 class Platform(Element, PlatformModel):

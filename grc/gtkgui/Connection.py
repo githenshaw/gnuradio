@@ -23,7 +23,7 @@ import Colors
 from Constants import CONNECTOR_ARROW_BASE, CONNECTOR_ARROW_HEIGHT
 import gtk
 
-from .. python.Connection import Connection as ConnectionModel
+from .. model.Connection import Connection as ConnectionModel
 
 class Connection(Element, ConnectionModel):
     """

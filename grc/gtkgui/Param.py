@@ -217,7 +217,7 @@ Error:
     #end for
 #end if"""
 
-from .. python.Param import Param as ParamModel
+from .. model.Param import Param as ParamModel
 
 
 class Param(Element, ParamModel):
