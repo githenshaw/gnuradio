@@ -17,12 +17,32 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from Element import Element
+from . Element import Element
+from . FlowGraph import FlowGraph as _FlowGraph
+from . Connection import Connection as _Connection
+from . Block import Block as _Block
+from . Port import Port as _Port
+from . Param import Param as _Param
 
-class Platform(Element):
-    def __init__(self, prefs_file):
+from .. python.Platform import Platform as PlatformModel
+from .. python.Constants import PREFS_FILE
+
+
+class Platform(Element, PlatformModel):
+    def __init__(self, prefs_file=PREFS_FILE):
         Element.__init__(self)
-
         self._prefs_file = prefs_file
+        PlatformModel.__init__(self)
 
-    def get_prefs_file(self): return self._prefs_file
+    def get_prefs_file(self):
+        return self._prefs_file
+
+
+    ##############################################
+    # Constructors
+    ##############################################
+    FlowGraph = _FlowGraph
+    Connection = _Connection
+    Block = _Block
+    Port = _Port
+    Param = _Param

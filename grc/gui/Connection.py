@@ -23,7 +23,9 @@ import Colors
 from Constants import CONNECTOR_ARROW_BASE, CONNECTOR_ARROW_HEIGHT
 import gtk
 
-class Connection(Element):
+from .. python.Connection import Connection as ConnectionModel
+
+class Connection(Element, ConnectionModel):
     """
     A graphical connection for ports.
     The connection has 2 parts, the arrow and the wire.
@@ -33,7 +35,9 @@ class Connection(Element):
     The arrow coloring exposes the enabled and valid states.
     """
 
-    def __init__(self): Element.__init__(self)
+    def __init__(self, **kwargs):
+        Element.__init__(self)
+        ConnectionModel.__init__(self, **kwargs)
 
     def get_coordinate(self):
         """

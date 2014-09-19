@@ -131,7 +131,7 @@ class Element(object):
         Returns:
             the parent
         """
-        return self.parent
+        return self._parent
 
     def set_highlighted(self, highlighted):
         """

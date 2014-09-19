@@ -32,16 +32,19 @@ import gtk
 PORT_MARKUP_TMPL="""\
 <span foreground="black" font_desc="$font">$encode($port.get_name())</span>"""
 
+from .. python.Port import Port as PortModel
 
-class Port(Element):
+class Port(Element, PortModel):
     """The graphical port."""
 
-    def __init__(self):
+    def __init__(self, block, n, dir):
         """
         Port contructor.
         Create list of connector coordinates.
         """
+        PortModel.__init__(self, block, n, dir)
         Element.__init__(self)
+
         self.W = self.H = self.w = self.h = 0
         self._connector_coordinate = (0, 0)
         self._connector_length = 0

@@ -18,11 +18,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from .. base.Block import Block as _Block
-from .. gui.Block import Block as _GUIBlock
 from . FlowGraph import _variable_matcher
 import extract_docs
 
-class Block(_Block, _GUIBlock):
+class Block(_Block):
 
     def is_virtual_sink(self): return self.get_key() == 'virtual_sink'
     def is_virtual_source(self): return self.get_key() == 'virtual_source'
@@ -59,7 +58,6 @@ class Block(_Block, _GUIBlock):
             flow_graph=flow_graph,
             n=n,
         )
-        _GUIBlock.__init__(self)
 
     def get_bus_structure(self, direction):
         if direction == 'source':

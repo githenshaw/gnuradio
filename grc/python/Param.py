@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from .. base.Param import Param as _Param
-from .. gui.Param import Param as _GUIParam
 import Constants
 import numpy
 from gnuradio import eng_notation
@@ -44,11 +43,11 @@ COMPLEX_TYPES = tuple(COMPLEX_TYPES + REAL_TYPES + INT_TYPES)
 REAL_TYPES = tuple(REAL_TYPES + INT_TYPES)
 INT_TYPES = tuple(INT_TYPES)
 
-class Param(_Param, _GUIParam):
+
+class Param(_Param):
 
     def __init__(self, **kwargs):
         _Param.__init__(self, **kwargs)
-        _GUIParam.__init__(self)
         self._init = False
         self._hostage_cells = list()
 

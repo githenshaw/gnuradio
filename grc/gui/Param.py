@@ -217,10 +217,15 @@ Error:
     #end for
 #end if"""
 
-class Param(Element):
+from .. python.Param import Param as ParamModel
+
+
+class Param(Element, ParamModel):
     """The graphical parameter."""
 
-    def __init__(self): Element.__init__(self)
+    def __init__(self, **kwargs):
+        Element.__init__(self)
+        ParamModel.__init__(self, **kwargs)
 
     def get_input(self, *args, **kwargs):
         """

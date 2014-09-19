@@ -32,18 +32,22 @@ pygtk.require('2.0')
 import gtk
 import pango
 
+from .. python.Block import Block as BlockModel
+
 BLOCK_MARKUP_TMPL="""\
 #set $foreground = $block.is_valid() and 'black' or 'red'
 <span foreground="$foreground" font_desc="$font"><b>$encode($block.get_name())</b></span>"""
 
-class Block(Element):
+
+class Block(Element, BlockModel):
     """The graphical signal block."""
 
-    def __init__(self):
+    def __init__(self, flow_graph, n):
         """
         Block contructor.
         Add graphics related params to the block.
         """
+        BlockModel.__init__(self, flow_graph, n)
         self.W = 0
         self.H = 0
         #add the position param

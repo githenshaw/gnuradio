@@ -18,29 +18,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from Constants import SCROLL_PROXIMITY_SENSITIVITY, SCROLL_DISTANCE
+
 import Actions
 import Colors
 import Utils
 from Element import Element
 import pygtk
-pygtk.require('2.0')
 import gtk
 import random
 import Messages
+pygtk.require('2.0')
 
-class FlowGraph(Element):
+from .. python.FlowGraph import FlowGraph as FlowGraphModel
+
+
+class FlowGraph(Element, FlowGraphModel):
     """
     FlowGraph is the data structure to store graphical signal blocks,
     graphical inputs and outputs,
     and the connections between inputs and outputs.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         FlowGraph constructor.
         Create a list for signal blocks and connections. Connect mouse handlers.
         """
         Element.__init__(self)
+        FlowGraphModel.__init__(self, **kwargs)
+
         #when is the flow graph selected? (used by keyboard event handler)
         self.is_selected = lambda: bool(self.get_selected_elements())
         #important vars dealing with mouse event tracking
