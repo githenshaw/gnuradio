@@ -84,17 +84,17 @@ class TopBlockGenerator(object):
         throttling_blocks = filter(lambda b: b.throttle(), self._flow_graph.get_enabled_blocks())
         if not throttling_blocks and self._generate_options != 'hb':
             self.warnings.append("This flow graph may not have flow control: "
-                                  "no audio or RF hardware blocks found. "
-                                  "Add a Misc->Throttle block to your flow "
-                                  "graph to avoid CPU congestion.")
+                                 "no audio or RF hardware blocks found. "
+                                 "Add a Misc->Throttle block to your flow "
+                                 "graph to avoid CPU congestion.")
         if len(throttling_blocks) > 1:
             keys = set(map(lambda b: b.get_key(), throttling_blocks))
             if len(keys) > 1 and 'blocks_throttle' in keys:
                 self.warnings.append("This flow graph contains a throttle "
-                                      "block and another rate limiting block, "
-                                      "e.g. a hardware source or sink. "
-                                      "This is usually undesired. Consider "
-                                      "removing the throttle block.")
+                                     "block and another rate limiting block, "
+                                     "e.g. a hardware source or sink. "
+                                     "This is usually undesired. Consider "
+                                     "removing the throttle block.")
         #generate
         open(self.get_file_path(), 'w').write(
             self._build_python_code_from_template()
