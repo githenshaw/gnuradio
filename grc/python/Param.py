@@ -17,12 +17,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from .. base.Param import Param as _Param
-import Constants
-import numpy
 from gnuradio import eng_notation
 import re
 from gnuradio import gr
+
+import numpy
+
+import Constants
+from . base.Param import Param as _Param
+
 
 _check_id_matcher = re.compile('^[a-z|A-Z]\w*$')
 _show_id_matcher = re.compile('^(variable\w*|parameter|options|notebook)$')

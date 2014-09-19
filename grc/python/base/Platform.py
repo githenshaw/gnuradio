@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os
 import sys
+
 from .. base import ParseXML, odict
 from Element import Element as _Element
 from FlowGraph import FlowGraph as _FlowGraph
@@ -26,7 +27,7 @@ from Connection import Connection as _Connection
 from Block import Block as _Block
 from Port import Port as _Port
 from Param import Param as _Param
-from Constants import BLOCK_TREE_DTD, FLOW_GRAPH_DTD
+from . Constants import BLOCK_TREE_DTD, FLOW_GRAPH_DTD
 
 
 class Platform(_Element):

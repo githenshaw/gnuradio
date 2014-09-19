@@ -18,9 +18,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 import time
+
 from . import odict
-from Element import Element
-from .. gui import Messages
+from . Element import Element
 from . Constants import FLOW_GRAPH_FILE_FORMAT_VERSION
 
 
@@ -42,6 +42,9 @@ class FlowGraph(Element):
         self._timestamp = time.ctime()
         #inital blank import
         self.import_data()
+
+    def send_error_load(self, error):
+        print error
 
     def _get_unique_id(self, base_id=''):
         """
@@ -293,7 +296,7 @@ class FlowGraph(Element):
                 block = self.get_new_block('dummy_block')
                 # Ugly ugly ugly
                 _initialize_dummy_block(block, block_n)
-                Messages.send_error_load('Block key "%s" not found in %s' % (key, self.get_parent()))
+                self.send_error_load('Block key "%s" not found in %s' % (key, self.get_parent()))
 
             block.import_data(block_n)
         #build the connections
@@ -338,7 +341,7 @@ class FlowGraph(Element):
                 #build the connection
                 self.connect(source, sink)
             except LookupError, e:
-                Messages.send_error_load(
+                self.send_error_load(
                     'Connection between %s(%s) and %s(%s) could not be made.\n\t%s'%(
                     source_block_id, source_key, sink_block_id, sink_key, e))
                 errors = True

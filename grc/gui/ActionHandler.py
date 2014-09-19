@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 import os
-import signal
 from Constants import IMAGE_FILE_EXTENSION
 import Actions
 import pygtk
@@ -29,13 +28,12 @@ import subprocess
 import Preferences
 from threading import Thread
 import Messages
-from .. base import ParseXML
+from .. python.base import ParseXML
 from MainWindow import MainWindow
 from PropsDialog import PropsDialog
 from ParserErrorsDialog import ParserErrorsDialog
 import Dialogs
 from FileDialogs import OpenFlowGraphFileDialog, SaveFlowGraphFileDialog, SaveReportsFileDialog, SaveImageFileDialog
-
 gobject.threads_init()
 
 class ActionHandler:

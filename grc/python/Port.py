@@ -17,8 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from .. base.Port import Port as _Port
 import Constants
+from . base.Port import Port as _Port
+
 
 def _get_source_from_virtual_sink_port(vsp):
     """

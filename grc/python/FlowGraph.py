@@ -17,9 +17,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-import expr_utils
-from .. base.FlowGraph import FlowGraph as _FlowGraph
 import re
+
+import expr_utils
+from . base.FlowGraph import FlowGraph as _FlowGraph
+
 
 _variable_matcher = re.compile('^(variable\w*)$')
 _parameter_matcher = re.compile('^(parameter)$')

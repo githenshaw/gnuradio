@@ -17,17 +17,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+import pygtk
+
 from Element import Element
 import Utils
 import Colors
-from .. base import odict
+from .. python.base import odict
 from Constants import BORDER_PROXIMITY_SENSITIVITY
 from Constants import \
     BLOCK_LABEL_PADDING, \
     PORT_SEPARATION, LABEL_SEPARATION, \
     PORT_BORDER_SEPARATION, POSSIBLE_ROTATIONS, BLOCK_FONT, PARAM_FONT
 import Actions
-import pygtk
+
 pygtk.require('2.0')
 import gtk
 import pango

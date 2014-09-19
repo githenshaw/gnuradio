@@ -1,4 +1,4 @@
-__doc__ = """
+"""
 Copyright 2008-2011 Free Software Foundation, Inc.
 This file is part of GNU Radio
 
@@ -19,15 +19,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os
 from gnuradio import gr
-from .. base.Platform import Platform as _Platform
 
-from Generator import Generator
-from Constants import \
+from . Generator import Generator
+from . Constants import \
     HIER_BLOCKS_LIB_DIR, BLOCK_DTD, \
-    DEFAULT_FLOW_GRAPH, BLOCKS_DIRS
-import Constants
+    DEFAULT_FLOW_GRAPH, BLOCKS_DIRS, CORE_TYPES
+from . base.Platform import Platform as _Platform
 
-COLORS = [(name, color) for name, key, sizeof, color in Constants.CORE_TYPES]
+COLORS = [(name, color) for name, key, sizeof, color in CORE_TYPES]
 
 
 class Platform(_Platform):

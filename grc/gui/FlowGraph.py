@@ -81,6 +81,9 @@ class FlowGraph(Element, FlowGraphModel):
         ]: self._context_menu.append(action.create_menu_item() if action else gtk.SeparatorMenuItem())
         self.get_context_menu = lambda: self._context_menu
 
+    def send_error_load(self, error):
+        Messages.send_error_load(error)
+
     ###########################################################################
     # Access Drawing Area
     ###########################################################################

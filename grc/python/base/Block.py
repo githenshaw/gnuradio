@@ -17,13 +17,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import odict
-from . Constants import ADVANCED_PARAM_TAB, DEFAULT_PARAM_TAB
-from Element import Element
-
-from Cheetah.Template import Template
 from UserDict import UserDict
 from itertools import imap
+
+from Cheetah.Template import Template
+
+from . import odict
+from . Constants import ADVANCED_PARAM_TAB, DEFAULT_PARAM_TAB
+from . Element import Element
+
 
 class TemplateArg(UserDict):
     """

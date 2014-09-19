@@ -18,8 +18,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 import Constants
-from .. base.Element import Element
-from .. base.Connection import Connection as _Connection
+from . base.Element import Element
+from . base.Connection import Connection as _Connection
 
 
 class Connection(_Connection):

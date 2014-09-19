@@ -18,7 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from . import odict
-from Element import Element
+from . Element import Element
 
 def _get_keys(lst): return [elem.get_key() for elem in lst]
 def _get_elem(lst, key):

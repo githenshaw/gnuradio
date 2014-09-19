@@ -21,12 +21,11 @@ import os
 import sys
 import subprocess
 import tempfile
+
 from Cheetah.Template import Template
 
 from .. gui import Messages
-from .. base import ParseXML
-from .. base import odict
-
+from . base import ParseXML, odict
 from . Constants import TOP_BLOCK_FILE_MODE, FLOW_GRAPH_TEMPLATE, \
     XTERM_EXECUTABLE, HIER_BLOCK_FILE_MODE, HIER_BLOCKS_LIB_DIR, BLOCK_DTD
 from . import expr_utils
