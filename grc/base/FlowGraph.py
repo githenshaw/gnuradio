@@ -22,6 +22,7 @@ from Element import Element
 from .. gui import Messages
 from . Constants import FLOW_GRAPH_FILE_FORMAT_VERSION
 
+
 class FlowGraph(Element):
 
     def __init__(self, platform):
@@ -56,48 +57,8 @@ class FlowGraph(Element):
             #make sure that the id is not used by another block
             if not filter(lambda b: b.get_id() == id, self.get_blocks()): return id
 
-    def __str__(self): return 'FlowGraph - %s(%s)'%(self.get_option('title'), self.get_option('id'))
-    def rewrite(self):
-        def refactor_bus_structure():
-
-            for block in self.get_blocks():
-                for direc in ['source', 'sink']:
-                    if direc == 'source':
-                        get_p = block.get_sources;
-                        get_p_gui = block.get_sources_gui;
-                        bus_structure = block.form_bus_structure('source');
-                    else:
-                        get_p = block.get_sinks;
-                        get_p_gui = block.get_sinks_gui
-                        bus_structure = block.form_bus_structure('sink');
-
-                    if 'bus' in map(lambda a: a.get_type(), get_p_gui()):
-
-
-
-                        if len(get_p_gui()) > len(bus_structure):
-                            times = range(len(bus_structure), len(get_p_gui()));
-                            for i in times:
-                                for connect in get_p_gui()[-1].get_connections():
-                                    block.get_parent().remove_element(connect);
-                                get_p().remove(get_p_gui()[-1]);
-                        elif len(get_p_gui()) < len(bus_structure):
-                            n = {'name':'bus','type':'bus'};
-                            if True in map(lambda a: isinstance(a.get_nports(), int), get_p()):
-                                n['nports'] = str(1);
-
-                            times = range(len(get_p_gui()), len(bus_structure));
-
-                            for i in times:
-                                n['key'] = str(len(get_p()));
-                                n = odict(n);
-                                port = block.get_parent().get_parent().Port(block=block, n=n, dir=direc);
-                                get_p().append(port);
-
-
-
-        for child in self.get_children(): child.rewrite()
-        refactor_bus_structure();
+    def __str__(self):
+        return 'FlowGraph - %s(%s)'%(self.get_option('title'), self.get_option('id'))
 
     def get_option(self, key):
         """

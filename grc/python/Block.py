@@ -51,8 +51,7 @@ class Block(_Block, _GUIBlock):
         self._checks = n.findall('check')
         self._callbacks = n.findall('callback')
         self._throttle = n.find('throttle') or ''
-        self._bus_structure_source = n.find('bus_structure_source') or ''
-        self._bus_structure_sink = n.find('bus_structure_sink') or ''
+
         #build the block
         _Block.__init__(
             self,
@@ -61,20 +60,26 @@ class Block(_Block, _GUIBlock):
         )
         _GUIBlock.__init__(self)
 
-    def get_bus_structure(self, direction):
-        if direction == 'source':
-            bus_structure = self._bus_structure_source;
-        else:
-            bus_structure = self._bus_structure_sink;
+        self._bussify_sink = n.find('bus_sink')
+        self._bussify_source = n.find('bus_source')
+        self._bus_structure_source = n.find('bus_structure_source') or ''
+        self._bus_structure_sink = n.find('bus_structure_sink') or ''
+        self.back_ofthe_bus(self.get_sources())
+        self.back_ofthe_bus(self.get_sinks())
+        self.current_bus_structure = {'source': None, 'sink': None}
 
-        bus_structure = self.resolve_dependencies(bus_structure);
+    def back_ofthe_bus(self, ports):
+        ports.sort(key=lambda a: a.get_type() == 'bus')
 
-        if not bus_structure: return ''
-        try:
-            clean_bus_structure = self.get_parent().evaluate(bus_structure)
-            return clean_bus_structure
+    def filter_bus_port(self, ports):
+        bus_ports = [port for port in ports if port.get_type() == 'bus']
+        return bus_ports if bus_ports else ports
 
-        except: return ''
+    def get_ports_gui(self): return self.filter_bus_port(self.get_sources()) + self.filter_bus_port(self.get_sinks())
+    def get_sinks_gui(self): return self.filter_bus_port(self.get_sinks())
+    def get_sources_gui(self): return self.filter_bus_port(self.get_sources());
+
+
     def throttle(self): return bool(self._throttle)
 
     def validate(self):
@@ -99,6 +104,46 @@ class Block(_Block, _GUIBlock):
                 self.get_parent().evaluate(value)
             except Exception as err:
                 self.add_error_message('Value "%s" cannot be evaluated:\n%s' % (value, err))
+
+    def get_bus_structure(self, direction):
+        bus_structure = None
+        try:
+            bus_structure = self.get_parent().evaluate(self.resolve_dependencies(
+                self._bus_structure_source if direction == 'source' else self._bus_structure_sink
+            ))
+        except:
+            pass
+        if not bus_structure:  # create one bus containing all ports
+            bus_structure = [range(len(self.get_sources() if direction == 'source' else self.get_sinks()))]
+            # TODO: have i considered nports?
+        return bus_structure
+
+    def bussify(self, n, direction):
+        if direction == 'source':
+            get_ports = self.get_sources
+            get_ports_gui = self.get_sources_gui
+        else:
+            get_ports = self.get_sinks
+            get_ports_gui = self.get_sinks_gui
+
+        for port in get_ports():
+            for connection in port.get_connections():
+                self.get_parent().remove_element(connection)
+
+        if (not 'bus' in map(lambda a: a.get_type(), get_ports())) and len(get_ports()) > 0:
+            structure = self.get_bus_structure(direction)
+            if get_ports()[0].get_nports():
+                n['nports'] = '1'
+            for i in range(len(structure)):
+                n['key'] = str(len(get_ports()))
+                n = odict(n)
+                port = self.get_parent().get_parent().Port(block=self, n=n, dir=direction)
+                get_ports().append(port)
+
+        elif 'bus' in map(lambda a: a.get_type(), get_ports()):
+            for port in get_ports_gui():
+                get_ports().remove(port);
+            self.current_bus_structure[direction] = ''
 
     def rewrite(self):
         """
@@ -129,6 +174,32 @@ class Block(_Block, _GUIBlock):
             # renumber non-message/-msg ports
             for i, port in enumerate(filter(lambda p: p.get_key().isdigit(), ports)):
                 port._key = str(i)
+
+        for direction in ['source', 'sink']:
+            if direction == 'source':
+                ports = self.get_sources()
+                ports_gui = self.get_sources_gui()
+                bus_structure = self.get_bus_structure('source')
+            else:
+                ports = self.get_sinks()
+                ports_gui = self.get_sinks_gui()
+                bus_structure = self.get_bus_structure('sink')
+
+            if 'bus' in map(lambda a: a.get_type(), ports_gui):
+                if len(ports_gui) > len(bus_structure):
+                    for i in range(len(bus_structure), len(ports_gui)):
+                        for connection in ports_gui[-1].get_connections():
+                            self.get_parent().remove_element(connection)
+                        ports.remove(ports_gui[-1])
+                elif len(ports_gui) < len(bus_structure):
+                    from .. base.odict import odict
+                    n = odict({'name': 'bus', 'type': 'bus'})
+                    if any(map(lambda a: isinstance(a.get_nports(), int), ports)):
+                        n['nports'] = '1'
+                    for i in range(len(ports_gui), len(bus_structure)):
+                        n['key'] = str(len(ports))
+                        port = self.get_parent().get_parent().Port(block=self, n=n, dir=direction)
+                        ports.append(port)
 
     def port_controller_modify(self, direction):
         """

@@ -28,8 +28,8 @@ def convert_hier(flow_graph, python_file):
     input_msgp = flow_graph.get_msg_pad_sources();
     output_msgp = flow_graph.get_msg_pad_sinks();
     parameters = flow_graph.get_parameters()
-    bussink = flow_graph.get_bussink()
-    bussrc = flow_graph.get_bussrc()
+    bussink = flow_graph.has_bussified_sinks()
+    bussrc = flow_graph.has_bussified_sources()
     bus_struct_sink = flow_graph.get_bus_structure_sink()
     bus_struct_src = flow_graph.get_bus_structure_src()
     block_key = flow_graph.get_option('id')
@@ -63,9 +63,9 @@ def convert_hier(flow_graph, python_file):
     block_n['param'] = params_n
     #sink data stream ports
     if bussink:
-        block_n['bus_sink'] = '1';
+        block_n['bus_sink'] = '1'
     if bussrc:
-        block_n['bus_source'] = '1';
+        block_n['bus_source'] = '1'
     block_n['sink'] = list()
     for input_sig in input_sigs:
         sink_n = odict()

@@ -171,66 +171,47 @@ class FlowGraph(_FlowGraph, _GUIFlowGraph):
         monitors = filter(lambda b: _monitors_searcher.search(b.get_key()), self.get_enabled_blocks())
         return monitors
 
-
-    def get_bussink(self):
-        bussink = filter(lambda b: _bussink_searcher.search(b.get_key()), self.get_enabled_blocks())
-
-        for i in bussink:
-            for j in i.get_params():
-                if j.get_name() == 'On/Off' and j.get_value() == 'on':
-                    return True;
-
+    def has_bussified_sinks(self):
+        for bus_sink in self.get_bus_structure_sink():
+            for param in bus_sink.get_params():
+                if param.get_name() == 'On/Off' and param.get_value() == 'on':
+                    return True
         return False
 
-
-
-    def get_bussrc(self):
-        bussrc = filter(lambda b: _bussrc_searcher.search(b.get_key()), self.get_enabled_blocks())
-
-        for i in bussrc:
-            for j in i.get_params():
-                if j.get_name() == 'On/Off' and j.get_value() == 'on':
-                    return True;
-
+    def has_bussified_sources(self):
+        for bus_source in self.get_bus_structure_src():
+            for param in bus_source.get_params():
+                if param.get_name() == 'On/Off' and param.get_value() == 'on':
+                    return True
         return False
 
     def get_bus_structure_sink(self):
         bussink = filter(lambda b: _bus_struct_sink_searcher.search(b.get_key()), self.get_enabled_blocks())
-
         return bussink
 
     def get_bus_structure_src(self):
         bussrc = filter(lambda b: _bus_struct_src_searcher.search(b.get_key()), self.get_enabled_blocks())
-
         return bussrc
-
 
     def rewrite(self):
         """
         Flag the namespace to be renewed.
         """
-        def reconnect_bus_blocks():
-            for block in self.get_blocks():
-
-                if 'bus' in map(lambda a: a.get_type(), block.get_sources_gui()):
-
-
-                    for i in range(len(block.get_sources_gui())):
-                        if len(block.get_sources_gui()[i].get_connections()) > 0:
-                            source = block.get_sources_gui()[i]
-                            sink = []
-
-                            for j in range(len(source.get_connections())):
-                                sink.append(source.get_connections()[j].get_sink());
-
-
-                            for elt in source.get_connections():
-                                self.remove_element(elt);
-                            for j in sink:
-                                self.connect(source, j);
         self._renew_eval_ns = True
-        _FlowGraph.rewrite(self);
-        reconnect_bus_blocks();
+        _FlowGraph.rewrite(self)
+
+        for block in self.get_blocks():
+            if not 'bus' in map(lambda a: a.get_type(), block.get_sources_gui()):
+                continue
+            for source in block.get_sources_gui():
+                if not source.get_connections():
+                    continue
+                sinks = []
+                for connection in source.get_connections():
+                    sinks.append(connection.get_sink())
+                    self.remove_element(connection)
+                for sink in sinks:
+                    self.connect(source, sink)
 
     def evaluate(self, expr):
         """
