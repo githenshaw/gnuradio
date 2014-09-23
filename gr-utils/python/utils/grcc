@@ -24,7 +24,7 @@ import warnings
 warnings.simplefilter('ignore')
 
 try:
-    from grc.python.Platform import Platform
+    from grc.model.Platform import Platform
 except ImportError:
     from gnuradio.grc.python.Platform import Platform
 
