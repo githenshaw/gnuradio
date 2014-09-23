@@ -21,7 +21,6 @@ class MainView(QtWidgets.QMainWindow):
             QtWidgets.QMainWindow.AllowTabbedDocks | \
             QtWidgets.QMainWindow.AnimatedDocks)
 
-        self.setWindowIcon(QtGui.QIcon('logo/gnuradio_logo_icon-square-150x150-white.png'))
 
         ### TODO: Also need to pull from the saved preferences as what to show and where
 

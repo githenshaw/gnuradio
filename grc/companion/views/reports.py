@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-class ReportView(QtWidgets.QDockWidget):
+class ReportsView(QtWidgets.QDockWidget):
     '''
     Report view
     '''
@@ -35,10 +35,7 @@ class ReportView(QtWidgets.QDockWidget):
         layout.addWidget(text)
         self.setWidget(contents)
 
-    def add_line(self):
-        pass
-
-    def clear(self):
-        pass
+    def getText(self):
+        return self.text
 
 

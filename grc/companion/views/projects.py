@@ -15,7 +15,7 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 
-class ProjectView(QtWidgets.QDockWidget):
+class ProjectsView(QtWidgets.QDockWidget):
     '''
     Project view
     '''
