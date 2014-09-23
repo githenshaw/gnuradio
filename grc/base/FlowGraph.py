@@ -134,13 +134,14 @@ class FlowGraph(Element):
         Returns:
             the new block or None if not found
         """
-        if key not in self.get_parent().get_block_keys(): return None
+        if key not in self.get_parent().get_block_keys():
+            return None
         block = self.get_parent().get_new_block(self, key)
-        self.get_elements().append(block);
+        self.get_elements().append(block)
         if block._bussify_sink:
-            block.bussify({'name':'bus','type':'bus'}, 'sink')
+            block.bussify('sink')
         if block._bussify_source:
-            block.bussify({'name':'bus','type':'bus'}, 'source')
+            block.bussify('source')
         return block;
 
     def connect(self, porta, portb):

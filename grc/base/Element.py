@@ -93,4 +93,5 @@ class Element(object):
     def is_source(self): return False
     def is_sink(self): return False
     def is_port(self): return False
+    def is_bus_port(self): return False
     def is_param(self): return False

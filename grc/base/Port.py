@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from Element import Element
 
+
 class Port(Element):
 
     def __init__(self, block, n, dir):
@@ -36,6 +37,7 @@ class Port(Element):
         self._name = n['name']
         self._key = n['key']
         self._type = n['type']
+        self._is_bus_port = self._type == 'bus'
         self._hide = n.find('hide') or ''
         self._dir = dir
 
@@ -73,6 +75,7 @@ class Port(Element):
     def get_key(self): return self._key
     def is_sink(self): return self._dir == 'sink'
     def is_source(self): return self._dir == 'source'
+    def is_bus_port(self): return self._is_bus_port
     def get_type(self): return self.get_parent().resolve_dependencies(self._type)
     def get_hide(self):
         value = self.get_parent().resolve_dependencies(self._hide).strip().lower()

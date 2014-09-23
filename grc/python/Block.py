@@ -18,6 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from .. base.Block import Block as _Block
+from .. base.odict import odict
 from .. gui.Block import Block as _GUIBlock
 from . FlowGraph import _variable_matcher
 import extract_docs
@@ -71,13 +72,14 @@ class Block(_Block, _GUIBlock):
     def back_ofthe_bus(self, ports):
         ports.sort(key=lambda a: a.get_type() == 'bus')
 
-    def filter_bus_port(self, ports):
-        bus_ports = [port for port in ports if port.get_type() == 'bus']
-        return bus_ports if bus_ports else ports
+    def get_sinks_gui(self):
+        return filter(lambda p: p.is_bus_port(), self.get_sinks()) or self.get_sinks()
 
-    def get_ports_gui(self): return self.filter_bus_port(self.get_sources()) + self.filter_bus_port(self.get_sinks())
-    def get_sinks_gui(self): return self.filter_bus_port(self.get_sinks())
-    def get_sources_gui(self): return self.filter_bus_port(self.get_sources());
+    def get_sources_gui(self):
+        return filter(lambda p: p.is_bus_port(), self.get_sources()) or self.get_sources()
+
+    def get_ports_gui(self):
+        return self.get_sources_gui() + self.get_sinks_gui()
 
 
     def throttle(self): return bool(self._throttle)
@@ -118,32 +120,37 @@ class Block(_Block, _GUIBlock):
             # TODO: have i considered nports?
         return bus_structure
 
-    def bussify(self, n, direction):
+    def bussify(self, direction):
         if direction == 'source':
-            get_ports = self.get_sources
+            ports = self.get_sources()
             get_ports_gui = self.get_sources_gui
         else:
-            get_ports = self.get_sinks
+            ports = self.get_sinks()
             get_ports_gui = self.get_sinks_gui
 
-        for port in get_ports():
+        if not ports:
+            return
+
+        # disconnect all ports
+        for port in ports():
             for connection in port.get_connections():
                 self.get_parent().remove_element(connection)
 
-        if (not 'bus' in map(lambda a: a.get_type(), get_ports())) and len(get_ports()) > 0:
-            structure = self.get_bus_structure(direction)
-            if get_ports()[0].get_nports():
-                n['nports'] = '1'
-            for i in range(len(structure)):
-                n['key'] = str(len(get_ports()))
-                n = odict(n)
+        #if (not 'bus' in map(lambda a: a.get_type(), get_ports())) and len(get_ports()) > 0:
+        if self.current_bus_structure[direction]:
+            # add bus ports
+            bus_structure = self.get_bus_structure(direction)
+            self.current_bus_structure[direction] = bus_structure
+            for ports_in_bus in range(len(bus_structure)):
+                n = odict({'name': 'bus', 'type': 'bus', 'key': str(len(ports()))})
                 port = self.get_parent().get_parent().Port(block=self, n=n, dir=direction)
-                get_ports().append(port)
+                ports().append(port)
 
-        elif 'bus' in map(lambda a: a.get_type(), get_ports()):
+        else:
+            # remove all bus ports
             for port in get_ports_gui():
-                get_ports().remove(port);
-            self.current_bus_structure[direction] = ''
+                ports().remove(port)
+            self.current_bus_structure[direction] = None
 
     def rewrite(self):
         """
@@ -192,7 +199,6 @@ class Block(_Block, _GUIBlock):
                             self.get_parent().remove_element(connection)
                         ports.remove(ports_gui[-1])
                 elif len(ports_gui) < len(bus_structure):
-                    from .. base.odict import odict
                     n = odict({'name': 'bus', 'type': 'bus'})
                     if any(map(lambda a: isinstance(a.get_nports(), int), ports)):
                         n['nports'] = '1'

@@ -513,21 +513,19 @@ class ActionHandler:
             self.main_window.btwin.search_entry.show()
             self.main_window.btwin.search_entry.grab_focus()
         elif action == Actions.OPEN_HIER:
-            for b in self.get_flow_graph().get_selected_blocks():
-                if b._grc_source:
-                    self.main_window.new_page(b._grc_source, show=True)
+            for block in self.get_flow_graph().get_selected_blocks():
+                if block._grc_source:
+                    self.main_window.new_page(block._grc_source, show=True)
         elif action == Actions.BUSSIFY_SOURCES:
-            n = {'name':'bus', 'type':'bus'}
-            for b in self.get_flow_graph().get_selected_blocks():
-                b.bussify(n, 'source')
+            for block in self.get_flow_graph().get_selected_blocks():
+                block.bussify('source')
             self.get_flow_graph()._old_selected_port = None
             self.get_flow_graph()._new_selected_port = None
             Actions.ELEMENT_CREATE()
 
         elif action == Actions.BUSSIFY_SINKS:
-            n = {'name':'bus', 'type':'bus'}
-            for b in self.get_flow_graph().get_selected_blocks():
-                b.bussify(n, 'sink')
+            for block in self.get_flow_graph().get_selected_blocks():
+                block.bussify('sink')
             self.get_flow_graph()._old_selected_port = None
             self.get_flow_graph()._new_selected_port = None
             Actions.ELEMENT_CREATE()
