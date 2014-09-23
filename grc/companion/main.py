@@ -1,25 +1,34 @@
 import os
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from . views import blocktree, main, projects, reports
+
+from . import views
+from . import controllers
 
 class MainController(object):
     def __init__(self):
 
         # Load the main view class and initialize QMainWindow
-        self._window = main.MainView()
+        self._window = views.MainView()
         self._platform = None
 
         # Also load and initialize child controllers
-        report_view = reports.ReportView()
-        #self.report_controller = ReportContoller(report_view)
+        report_view = views.ReportsView()
+        self.report_controller = controllers.ReportsController(report_view)
         self._window.addDockWidget(QtCore.Qt.DockWidgetArea(8), report_view)
 
-        block_view = blocktree.BlockTreeView()
-        self._window.addDockWidget(QtCore.Qt.RightDockWidgetArea, block_view)
+        self.projects_controller = controllers.ProjectsController()
+        self._window.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.projects_controller.get_view())
 
-        project_view = projects.ProjectView()
-        self._window.addDockWidget(QtCore.Qt.RightDockWidgetArea, project_view)
+
+
+        self.report_controller.add_line("s")
+
+        #block_view = blocktree.BlockTreeView()
+        #self._window.addDockWidget(QtCore.Qt.RightDockWidgetArea, block_view)
+
+        #project_view = projects.ProjectView()
+        #self._window.addDockWidget(QtCore.Qt.RightDockWidgetArea, project_view)
 
         #self.actionLibrary.triggered.connect(self.blockLibrary.show)
         #self.actionNew.triggered.connect(self.new_page)
@@ -36,8 +45,12 @@ class MainController(object):
         #geometry = Preferences.main_window_geometry()
         #if geometry is not None: self.restoreGeometry(geometry)
 
-    def show(self):
+    def start(self):
         self._window.show()
+
+    def set_icon(self, path):
+        icon = QtGui.QIcon(path)
+        self._window.setWindowIcon(icon)
 
     ############################################################
     # Report Window

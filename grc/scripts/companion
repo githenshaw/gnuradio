@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from grc.companion.main import MainController
+from grc.companion import main
 
 """
 Companion should handle the main launch of everything.
@@ -17,10 +17,13 @@ if __name__ == "__main__":
     # Setup the main qt application and window
     app = QtWidgets.QApplication(sys.argv)
 
+    # Get the icon path. Will be relative to this script so define it here.
+    icon_path = 'grc/companion/resources/logo/gnuradio_logo_icon-square-150x150-white.png'
+
     # Initialize the GUI
-    main = MainController()
-    main.show()
+    controller = main.MainController()
+    controller.set_icon(icon_path)
+    controller.start()
     
     # Launch the qt app
     sys.exit(app.exec_())
-
