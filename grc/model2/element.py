@@ -17,35 +17,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-import tempfile
 
-from .. block_xml_loader import load_category_tree_xml
+class Element(object):
 
+    def __init__(self, parent):
+        self._parent = parent
+        self._children = []
+        try:
+            parent.children.append(self)
+        except AttributeError:
+            pass
 
-category_tree_test_data = """
-<cat>
-    <name></name>
-    <block>key1</block>
-</cat>
-<cat>
-    <name>a</name>
-    <cat>
-        <name>b</name>
-        <block>key2</block>
-        <block>key3</block>
-    </cat>
-    <block>key4</block>
-</cat>
-"""
+    @property
+    def parent(self):
+        return self._parent
 
+    @property
+    def children(self):
+        return self._children
 
-def test_category_tree_xml():
-    with tempfile.TemporaryFile() as fp:
-        fp.write(category_tree_test_data)
-        fp.seek(0)
-        category_iter = load_category_tree_xml(fp)
+    def rewrite(self):
+        for child in self.children:
+            child.rewrite()
 
-    assert ('key1', []) == category_iter.next()
-    assert ('key2', ['a', 'b']) == category_iter.next()
-    assert ('key3', ['a', 'b']) == category_iter.next()
-    assert ('key4', ['a']) == category_iter.next()
+    def validate(self):
+        for child in self.children:
+            child.rewrite()

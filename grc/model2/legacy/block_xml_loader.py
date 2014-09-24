@@ -41,18 +41,20 @@ def load_category_tree_xml(xml_file):
     """Validate and parse category tree file and add it to list"""
 
     #recursive function to load categories and blocks
-    def load_category(n, parent):
-        name = n.find('name') or ''
+    def _load_category(n, parent):
+        name = n.get('name')
         path = parent + [str(name)] if name else parent
         # load sub-categories
-        for sub_n in n.findall('cat'):
-            # yield from =)
-            for block_key, path in load_category(sub_n, path):
-                yield block_key, path
+        for sub_n in ParseXML.getall(n, 'cat'):
+            for block_key, sub_categories in _load_category(sub_n, path):
+                yield block_key, sub_categories  # yield from =)
         #add blocks in this category
-        for block_key in n.findall('block'):
+        for block_key in ParseXML.getall(n, 'block'):
             yield block_key, path
 
-    ParseXML.validate_dtd(xml_file, BLOCK_TREE_DTD)
-    category_tree_n = ParseXML.from_file(xml_file).find('cat')
-    load_category(category_tree_n, [])
+    #ParseXML.validate_dtd(xml_file, BLOCK_TREE_DTD)
+    category_tree_n = ParseXML.from_file(xml_file)['cat']
+    # yield from =)
+    for block_key, path in _load_category(category_tree_n, []):
+        yield block_key, path
+

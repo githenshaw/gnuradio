@@ -23,6 +23,11 @@ from lxml import etree
 xml_failures = {}
 
 
+def getall(n, key):
+    value = n.get(key, [])
+    return value if isinstance(value, list) else [value]
+
+
 class XMLSyntaxError(Exception):
     def __init__(self, error_log):
         self._error_log = error_log
@@ -53,12 +58,13 @@ def validate_dtd(xml_file, dtd_file=None):
     # perform dtd validation if the dtd file is specified
     if not dtd_file:
         return
+    dtd = None
     try:
         dtd = etree.DTD(dtd_file)
         if not dtd.validate(xml.getroot()):
             raise XMLSyntaxError(dtd.error_log)
-    except etree.LxmlError:
-        raise XMLSyntaxError(dtd.error_log)
+    except etree.LxmlError as e:
+        raise XMLSyntaxError(dtd.error_log if dtd else e)
 
 
 def from_file(xml_file):

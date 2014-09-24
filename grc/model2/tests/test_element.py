@@ -17,6 +17,21 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from .test_block_xml_loader import test_category_tree_xml
+from .. element import Element
 
-test_category_tree_xml()
+
+def test_element():
+    class T(Element):
+        pass
+
+    a = T(None)
+    b = T(a)
+    c = T(a)
+    d = T(c)
+
+    assert isinstance(a, Element)
+    assert b.parent == a
+    assert c.parent == a
+    assert d.parent == c
+    assert a.children == [b, c]
+    assert c.children == [d]
