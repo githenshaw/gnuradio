@@ -23,13 +23,13 @@ from . import Element, FlowGraph
 
 class Param(Element):
 
-    def __init__(self, parent, key, name, value_type=None, value_default=None):
+    def __init__(self, parent, key, name, value_type=None, default_value=None):
         super(Param, self).__init__(parent)
         self._key = key
         self._name = name
 
         self.value_type = value_type
-        self.value = self.value_default = value_default
+        self.value = self.value_default = default_value
 
     @property
     def key(self):
@@ -49,7 +49,7 @@ class IdParam(Param):
 
     def __init__(self, parent):
         super(IdParam, self).__init__(
-            parent, 'id', 'ID', str, value_default=self._get_unique_id()
+            parent, 'id', 'ID', str, default_value=self._get_unique_id()
         )
 
     def _get_unique_id(self):

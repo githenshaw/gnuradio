@@ -22,6 +22,7 @@ from collections import OrderedDict
 from . import Element, Port, Param
 from . param import IdParam
 
+
 class BlockException(Exception):
     pass
 
@@ -30,27 +31,28 @@ class BlockSetupException(BlockException):
     pass
 
 
-class Block(Element):
+class BaseBlock(Element):
 
     key = 'key'  # key is a unique string that is a valid python variable name.
     name = 'label'
+    domain = None
 
     def __init__(self, parent, **kwargs):
-        super(Block, self).__init__(parent)
+        super(BaseBlock, self).__init__(parent)
 
-        self._ports = {  # the raw/unexpanded/hidden ports are help here
+        self._ports = {  # the raw/unexpanded/hidden ports are held here
             'sources': OrderedDict(),  # a dict to hold the source ports this block, indexed by key
             'sinks': OrderedDict(),  # a dict to hold the sink ports this block, indexed by key
         }
         self.params = OrderedDict()
+        self.add_param(IdParam(self))
+        self.add_param(key='_enabled', name='Enabled', value_type=bool, default_value=True)
 
         # a list of sink ports currently visible (think hidden ports, bus ports, nports)
         # filled / updated by rewrite()
         self.sources = []
         self.sinks = []
 
-        self.add_param(IdParam(self))
-        # todo: add other default params
         self.setup(**kwargs)
 
     def setup(self, **kwargs):
@@ -95,5 +97,29 @@ class Block(Element):
 
     def rewrite(self):
         """Update the blocks ports"""
-        super(Block, self).rewrite()
+        super(BaseBlock, self).rewrite()
         # todo: expand nports, form busses, handle port hiding
+
+
+class Block(BaseBlock):
+    """A regular block (not a pad, virtual sink/source, variable)"""
+
+    def setup(self, **kwargs):
+        super(Block, self).setup(**kwargs)
+
+        self.add_param(key='alias', name='Block Alias', value_type=str, default_value=self.id)
+        if self.sources or self.sinks:
+            self.add_param(key='affinity', name='Core Affinity', value_type=list, default_value=[])
+        if self.sources:
+            self.add_param(key='minoutbuf', name='Min Output Buffer', value_type=int, default_value=0)
+            self.add_param(key='maxoutbuf', name='Max Output Buffer', value_type=int, default_value=0)
+
+
+class PadBlock(BaseBlock):
+    pass
+    # todo: add custom stuff
+
+
+class VirtualSourceSinkBlock(BaseBlock):
+    pass
+    # todo: add custom stuff
