@@ -20,39 +20,71 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 from collections import OrderedDict
 
 from . import Element
-from . port import PortBase
+from . port import Port
+from . param import Param
+
+
+class BlockException(Exception):
+    pass
+
+
+class BlockSetupException(BlockException):
+    pass
 
 
 class Block(Element):
 
-    KEY = 'key'
-    NAME = 'label'
+    key = 'key'  # key is a unique string that is a valid python variable name.
+    name = 'label'
 
-    SOURCES = None
-    SINKS = None
-
-    def __init__(self, parent):
+    def __init__(self, parent, **kwargs):
         super(Block, self).__init__(parent)
-        self._sources = self._instantiate_ports(self.SOURCES)
-        self._sinks = self._instantiate_ports(self.SINKS)
 
-    def _instantiate_ports(self, port_classes):
-        ports = OrderedDict()
-        for Port in (port_classes or []):
-            if issubclass(Port, PortBase):
-                port = Port(self)
-                ports[port.key] = port
-        return ports
+        self._ports = {  # the raw/unexpanded/hidden ports are help here
+            'sources': OrderedDict(),  # a dict to hold the source ports this block, indexed by key
+            'sinks': OrderedDict(),  # a dict to hold the sink ports this block, indexed by key
+        }
+        self.params = OrderedDict()
 
-    @property
-    def key(self):
-        """Get the key of this block (read-only)
+        # a list of sink ports currently visible (think hidden ports, bus ports, nports)
+        # filled / updated by rewrite()
+        self.sources = []
+        self.sinks = []
 
-        The key is a unique string that is a valid python variable name.
+        self.setup(**kwargs)
+
+    def setup(self, **kwargs):
+        """How to construct the block: sinks, sources, parameters"""
+        # here block designers add code for ports and param
+        raise NotImplementedError()
+
+    def add_port(self, *args, **kwargs):
+        """Add a port to this block
+        Usage options:
+            - a port object
+            - kwargs for port construction
         """
-        return self.KEY
+        # get port object
+        port = args[0] if args and isinstance(args[0], Port) else Port(*args, **kwargs)
+        # check and add
+        try:
+            key = str(port.key)
+            ports = self._ports[port.direction]
+            if key in ports:
+                raise BlockSetupException("Port key '{}' not unique")
+            ports[key] = port
+        except KeyError:
+            raise BlockSetupException("Unknown port direction")
 
-    @property
-    def name(self):
-        """Get the name of this block (read-only)"""
-        return self.NAME
+    def add_param(self, *args, **kwargs):
+        # get param object
+        if args and isinstance(args[0], Param):
+            port = args[0]
+        else:
+            port = Port(*args, **kwargs
+            )
+
+    def rewrite(self):
+        """Update the blocks ports"""
+        super(Block, self).rewrite()
+        # todo: expand nports, form busses, handle port hiding

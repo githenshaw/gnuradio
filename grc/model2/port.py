@@ -19,24 +19,52 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from . import Element
 
-
-class PortBase(Element):
-    KEY = 'key'
-    NAME = 'name'
-    TYPE = 'complex'
-    VLEN = 1
-    NPORTS = 1
-    OPTIONAL = False
-
-    def __init__(self, parent):
-        super(PortBase, self).__init__(parent)
+VALID_PORT_DIRECTIONS = ("sink", "source")
 
 
-def PORT(key, name, type, vlen=1, nports=1):
-    class Port(PortBase):
-        KEY = key
-        NAME = name
-        TYPE = type
-        VLEN = vlen
-        NPORTS = nports
-    return Port
+class Port(Element):
+    """Simple Port class"""
+
+    direction = None
+    domain = None
+
+    def __init__(self, parent, key, name, type, vlen=1, **kwargs):
+        super(Port, self).__init__(parent)
+        if not key:
+            raise TypeError("Key must not be empty")
+        self._key = key
+        self._name = name
+        self._type = type
+        self._vlen = vlen
+
+    def setup(self, **kwargs):
+        for var_name, value in kwargs.iteritems():
+            for attrib_name in (var_name, '_' + var_name):
+                if getattr(self, attrib_name):
+                    setattr(self, attrib_name, value)
+
+    @property
+    def key(self):
+        """ The key of a port is used in the connect function"""
+        return self._key
+
+    @key.setter
+    def key(self, value):
+        if self.type != "message" and not str(value).isdigit():
+            raise ValueError("A stream port key must be numeric")
+
+    @property
+    def type(self):
+        """ The data type of this port"""
+        return self._type
+
+
+class DynamicTypedPort(Port):
+
+    def __init__(self, parent, key, name, type, vlen=1, type_param_key='type', **kwargs):
+        super(DynamicTypedPort, self).__init__(parent, key, name, type, vlen, **kwargs)
+        self._type_param_key = type_param_key
+
+    def rewrite(self):
+        super(DynamicTypedPort, self).rewrite()
+        self._type = self.parent.params[self._type_param_key]
