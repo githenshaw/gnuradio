@@ -17,10 +17,45 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Element
+from itertools import imap
+from . import Element, FlowGraph
 
 
 class Param(Element):
 
-    def __init__(self, parent):
+    def __init__(self, parent, key, name, value_type=None, value_default=None):
         super(Param, self).__init__(parent)
+        self._key = key
+        self._name = name
+
+        self.value_type = value_type
+        self.value = self.value_default = value_default
+
+    @property
+    def key(self):
+        return self._key
+
+    @property
+    def name(self):
+        return self._name
+
+    def validate(self):
+        super(Param, self).validate()
+        # todo: check param validity
+
+
+class IdParam(Param):
+    """Parameter of a block used as a unique parameter within a flow-graph"""
+
+    def __init__(self, parent):
+        super(IdParam, self).__init__(
+            parent, 'id', 'ID', str, value_default=self._get_unique_id()
+        )
+
+    def _get_unique_id(self):
+        """get a unique block id within the flow-graph by trail&error"""
+        block = self.parent_block
+        blocks = self.parent_flowgraph.blocks
+        for block_id in imap(lambda key: "{}_{}".format(key, block), range(len(blocks))):
+            if block_id not in blocks:
+                return block_id

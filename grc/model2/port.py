@@ -17,7 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Element
+from itertools import ifilter
+
+from . import Element, FlowGraph
 
 VALID_PORT_DIRECTIONS = ("sink", "source")
 
@@ -55,8 +57,15 @@ class Port(Element):
 
     @property
     def type(self):
-        """ The data type of this port"""
+        """The data type of this port"""
         return self._type
+
+    @property
+    def connections(self):
+        """Iterator for the connections using this port"""
+        for connection in self.get_parent_by_class(FlowGraph):
+            if self in connection.ports:
+                yield connection
 
 
 class DynamicTypedPort(Port):

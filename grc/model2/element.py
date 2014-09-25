@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+from . import Block, FlowGraph
+
 
 class Element(object):
 
@@ -28,9 +30,33 @@ class Element(object):
         except AttributeError:
             pass
 
+    def get_parent_by_class(self, cls):
+        parent = self.parent
+        return parent if isinstance(self.parent, cls) else \
+            self.get_parent_by_class(cls) if parent else None
+
     @property
     def parent(self):
+        """Get the parent object"""
         return self._parent
+
+    @property
+    def parent_block(self):
+        """Get the first block object in the ancestry
+
+         Returns:
+            a block object or None
+        """
+        return self.get_parent_by_class(Block)
+
+    @property
+    def parent_flowgraph(self):
+        """Get the first flow-graph object in the ancestry
+
+         Returns:
+            a flow-graph object or None
+        """
+        return self.get_parent_by_class(FlowGraph)
 
     @property
     def children(self):

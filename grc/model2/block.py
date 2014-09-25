@@ -19,10 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from collections import OrderedDict
 
-from . import Element
-from . port import Port
-from . param import Param
-
+from . import Element, Port, Param
+from . param import IdParam
 
 class BlockException(Exception):
     pass
@@ -51,6 +49,8 @@ class Block(Element):
         self.sources = []
         self.sinks = []
 
+        self.add_param(IdParam(self))
+        # todo: add other default params
         self.setup(**kwargs)
 
     def setup(self, **kwargs):
@@ -58,31 +58,40 @@ class Block(Element):
         # here block designers add code for ports and param
         raise NotImplementedError()
 
+    @property
+    def id(self):
+        """unique identifier for this block within the flow-graph"""
+        return self.params['id'].value
+
     def add_port(self, *args, **kwargs):
         """Add a port to this block
+
         Usage options:
             - a port object
             - kwargs for port construction
         """
-        # get port object
-        port = args[0] if args and isinstance(args[0], Port) else Port(*args, **kwargs)
-        # check and add
         try:
+            port = args[0] if args and isinstance(args[0], Port) else Port(*args, **kwargs)
             key = str(port.key)
             ports = self._ports[port.direction]
             if key in ports:
-                raise BlockSetupException("Port key '{}' not unique")
+                raise BlockSetupException("Port key '{}' not unique".format(key))
             ports[key] = port
         except KeyError:
             raise BlockSetupException("Unknown port direction")
+        # todo: catch and rethrow Port Exception
 
     def add_param(self, *args, **kwargs):
-        # get param object
-        if args and isinstance(args[0], Param):
-            port = args[0]
-        else:
-            port = Port(*args, **kwargs
-            )
+        """Add a param to this block
+
+        Usage options:
+            - a param object
+            - kwargs for port construction
+        """
+        param = args[0] if args and isinstance(args[0], Param) else Param(*args, **kwargs)
+        key = str(param.key)
+        if key in self.params:
+            raise BlockSetupException("Param key '{}' not unique".format(key))
 
     def rewrite(self):
         """Update the blocks ports"""

@@ -18,3 +18,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from . element import Element
+
+from . platform import Platform
+from . flowgraph import FlowGraph
+from . block import Block
+from . port import Port
+from . param import Param

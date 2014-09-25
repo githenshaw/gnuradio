@@ -17,3 +17,37 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+from . import Element, Block
+
+
+class Connection(Element):
+
+    def __init__(self, parent, port_a, port_b):
+        super(Element, self).__init__(parent)
+        if port_a.is_sink:
+            port_a, port_b = port_b, port_a
+        if not (port_a.is_source and port_b.is_source):
+            raise ValueError("Can't make connection.")
+
+        self.ports = (port_a, port_b)
+        self.source_port = port_a
+        self.sink_port = port_b
+
+    @property
+    def source_block(self):
+        return self.source_port.get_parent_by_class(Block)
+
+    @property
+    def sink_block(self):
+        return self.sink_port.get_parent_by_class(Block)
+
+    @property
+    def endpoints(self):
+        return (
+            (self.source_block, self.source_port),
+            (self.sink_block, self.sink_port),
+        )
+
+    @property
+    def ports(self):
+        return self.source_port, self.sink_port
