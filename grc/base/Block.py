@@ -77,7 +77,7 @@ class Block(Element):
         self._block_wrapper_path = n.find('block_wrapper_path')
         self._bussify_sink = n.find('bus_sink')
         self._bussify_source = n.find('bus_source')
-        self._var_value = n.find('var_value') or '$value'
+        self._var_value = n.find('var_value') or ''
 
         # get list of param tabs
         n_tabs = n.find('param_tab_order') or None

@@ -178,7 +178,8 @@ class Block(_Block, _GUIBlock):
 
     def get_make(self): return self.resolve_dependencies(self._make)
     def get_var_make(self): return self.resolve_dependencies(self._var_make)
-    def get_var_value(self): return self.resolve_dependencies(self._var_value)
+    def get_var_value(self):
+        return self.resolve_dependencies(self._var_value) if self._var_value else self.get_param('value').to_code()
 
     def get_callbacks(self):
         """
