@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Block, FlowGraph
+from . import Block, FlowGraph, Platform
 
 
 class Element(object):
@@ -59,13 +59,31 @@ class Element(object):
         return self.get_parent_by_class(FlowGraph)
 
     @property
+    def platform(self):
+        """Get the platform object from the ancestry
+
+         Returns:
+            a platform object or None
+        """
+        return self.get_parent_by_class(Platform)
+
+    @property
     def children(self):
         return self._children
 
     def rewrite(self):
+        """Rewrite object and all child object in this tree
+
+        A rewrite shall be used to reevaluate variables, parameters, block surface (ports,...), ...
+        The resulting values shall be cached for fast access
+        """
         for child in self.children:
             child.rewrite()
 
     def validate(self):
+        """Validate object and all child object in this tree
+
+        Validation shall only check the validity of the flow-graph, not change any values
+        """
         for child in self.children:
             child.rewrite()

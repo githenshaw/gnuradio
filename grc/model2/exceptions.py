@@ -17,12 +17,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . element import Element
-from . import exceptions
 
-from . platform import Platform
-from . flowgraph import FlowGraph
-from . block import Block
-from . port import Port
-from . param import Param
-from . connection import Connection
+class GRCBaseException(Exception):
+    pass
+
+
+class BlockException(GRCBaseException):
+    pass
+
+
+class BlockSetupException(GRCBaseException):
+    pass

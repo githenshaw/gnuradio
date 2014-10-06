@@ -19,16 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from collections import OrderedDict
 
-from . import Element, Port, Param
+from . import Element, Port, Param, exceptions
 from . param import IdParam
-
-
-class BlockException(Exception):
-    pass
-
-
-class BlockSetupException(BlockException):
-    pass
 
 
 class BaseBlock(Element):
@@ -77,10 +69,10 @@ class BaseBlock(Element):
             key = str(port.key)
             ports = self._ports[port.direction]
             if key in ports:
-                raise BlockSetupException("Port key '{}' not unique".format(key))
+                raise exceptions.BlockSetupException("Port key '{}' not unique".format(key))
             ports[key] = port
         except KeyError:
-            raise BlockSetupException("Unknown port direction")
+            raise exceptions.BlockSetupException("Unknown port direction")
         # todo: catch and rethrow Port Exception
 
     def add_param(self, *args, **kwargs):
@@ -93,7 +85,7 @@ class BaseBlock(Element):
         param = args[0] if args and isinstance(args[0], Param) else Param(*args, **kwargs)
         key = str(param.key)
         if key in self.params:
-            raise BlockSetupException("Param key '{}' not unique".format(key))
+            raise exceptions.BlockSetupException("Param key '{}' not unique".format(key))
 
     def rewrite(self):
         """Update the blocks ports"""

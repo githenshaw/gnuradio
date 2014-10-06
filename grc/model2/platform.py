@@ -105,17 +105,11 @@ class Platform(object):
         return block
 
     def __repr__(self):
-        return 'Platform - %s'.format(self.name)
+        return '{}(name="{}", ...)'.format(self.__class__.__name__, self.name)
 
-    ##############################################
-    # Access Blocks
-    ##############################################
     @property
-    def block_keys(self):
-        return self._blocks.keys()
-    def get_block(self, key): return self._blocks[key]
-    def get_blocks(self): return self._blocks.values()
-    def get_new_block(self, flow_graph, key): return self.Block(flow_graph, n=self._blocks_n[key])
+    def blocks(self):
+        return self._blocks
 
     @property
     def name(self):

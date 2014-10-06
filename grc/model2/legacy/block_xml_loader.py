@@ -17,44 +17,80 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+
+from .. import Block
 from . import ParseXML
 
 
-BLOCK_TREE_DTD = 'block_tree.dtd'
+
+BLOCK_DTD = 'block.dtd'
 
 
 def load_block_xml(xml_file):
     """Load block description from xml file"""
+
     # validate and import
-    ParseXML.validate_dtd(xml_file, _block_dtd)
+    ParseXML.validate_dtd(xml_file, BLOCK_DTD)
     n = ParseXML.from_file(xml_file).find('block')
+
+
     n['block_wrapper_path'] = xml_file  # inject block wrapper path
+    if not 'domain' in n:
+        n['domain'] = None
+
     # get block instance and add it to the list of blocks
-    block = Block(None, n)
-    key = block.get_key()
-    #if key in self.get_block_keys():  # test against repeated keys
-    #    print >> sys.stderr, 'Warning: Block with key "%s" already exists.\n\tIgnoring: %s' % (key, xml_file)
+    block = construct_block_class_from_nested_data(n)
+
     return block
 
+BLOCK_TEMPLATE = """\
+class XMLBlock(Block):
+    key    = "{{ n['key'] }}"
+    name   = "{{ n['name'] }}"
+    domain = "{{ n['domain'] }}"
 
-def load_category_tree_xml(xml_file):
-    """Validate and parse category tree file and add it to list"""
+    def setup(self, **kwargs):
+        super(XMLBlock, self).setup(**kwargs)
 
-    #recursive function to load categories and blocks
-    def _load_category(n, parent):
-        name = n.get('name')
-        path = parent + [str(name)] if name else parent
-        # load sub-categories
-        for sub_n in ParseXML.getall(n, 'cat'):
-            for block_key, sub_categories in _load_category(sub_n, path):
-                yield block_key, sub_categories  # yield from =)
-        #add blocks in this category
-        for block_key in ParseXML.getall(n, 'block'):
-            yield block_key, path
+        # params
+        {% for param_n in n['params'] %}
+        self.add_param(
+            key = "{{ param_n['name'] }}",
+            name = "{{ param_n['name'] }}",
+            value_type = {{  }},
+            default_value = {{ }},
+        )
+        {% endfor %}
 
-    #ParseXML.validate_dtd(xml_file, BLOCK_TREE_DTD)
-    category_tree_n = ParseXML.from_file(xml_file)['cat']
-    # yield from =)
-    for block_key, path in _load_category(category_tree_n, []):
-        yield block_key, path
+        # sinks
+        {% for sink_n in n['sink'] %}
+        self.add_port(
+            key = {{  }},
+            name = {{  }},
+            type = {{  }},
+            vlen = {{  }},
+        )
+        {% endfor %}
+
+        # source
+        {% for source_n in n['source'] %}
+        self.add_port()
+        {% endfor %}
+"""
+
+
+def construct_block_class_from_nested_data(nested_data):
+    n = nested_data
+
+    class XMLBlock(Block):
+        key = n['key']
+        name = n['name']
+        domain = None
+
+
+    return XMLBlock
+
+
+def str_to_cls_name(name):
+    return name
 
