@@ -65,7 +65,6 @@ class XMLBlock(Block):
         # sinks
         {% for sink_n in n['sink'] %}
         self.add_port(
-            key = {{  }},
             name = {{  }},
             type = {{  }},
             vlen = {{  }},

@@ -30,13 +30,11 @@ class Port(Element):
     direction = None
     domain = None
 
-    def __init__(self, parent, key, name, type, vlen=1, **kwargs):
+    def __init__(self, parent, name, dtype, vlen=1, **kwargs):
         super(Port, self).__init__(parent)
-        if not key:
-            raise TypeError("Key must not be empty")
-        self._key = key
+        self._key = None
         self._name = name
-        self._type = type
+        self._dtype = dtype
         self._vlen = vlen
 
     def setup(self, **kwargs):
@@ -52,28 +50,28 @@ class Port(Element):
 
     @key.setter
     def key(self, value):
-        if self.type != "message" and not str(value).isdigit():
+        if self.dtype != "message" and not str(value).isdigit():
             raise ValueError("A stream port key must be numeric")
 
     @property
-    def type(self):
+    def dtype(self):
         """The data type of this port"""
-        return self._type
+        return self._dtype
 
     @property
     def connections(self):
         """Iterator for the connections using this port"""
-        for connection in self.get_parent_by_class(FlowGraph):
+        for connection in self.parent_flowgraph.connections:
             if self in connection.ports:
                 yield connection
 
 
-class DynamicTypedPort(Port):
+class DynamicPort(Port):
 
-    def __init__(self, parent, key, name, type, vlen=1, type_param_key='type', **kwargs):
-        super(DynamicTypedPort, self).__init__(parent, key, name, type, vlen, **kwargs)
+    def __init__(self, parent, key, name, vlen=1, type_param_key='type', **kwargs):
+        super(DynamicPort, self).__init__(parent, key, name, vlen, **kwargs)
         self._type_param_key = type_param_key
 
     def rewrite(self):
-        super(DynamicTypedPort, self).rewrite()
-        self._type = self.parent.params[self._type_param_key]
+        super(DynamicPort, self).rewrite()
+        self._dtype = self.parent.params[self._type_param_key]

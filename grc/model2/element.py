@@ -30,10 +30,10 @@ class Element(object):
         except AttributeError:
             pass
 
-    def get_parent_by_class(self, cls):
+    def _get_parent_by_class(self, cls):
         parent = self.parent
-        return parent if isinstance(self.parent, cls) else \
-            self.get_parent_by_class(cls) if parent else None
+        return parent if isinstance(parent, cls) else \
+            parent._get_parent_by_class(cls) if parent else None
 
     @property
     def parent(self):
@@ -47,7 +47,7 @@ class Element(object):
          Returns:
             a block object or None
         """
-        return self.get_parent_by_class(Block)
+        return self._get_parent_by_class(Block)
 
     @property
     def parent_flowgraph(self):
@@ -56,7 +56,7 @@ class Element(object):
          Returns:
             a flow-graph object or None
         """
-        return self.get_parent_by_class(FlowGraph)
+        return self._get_parent_by_class(FlowGraph)
 
     @property
     def platform(self):
@@ -65,7 +65,7 @@ class Element(object):
          Returns:
             a platform object or None
         """
-        return self.get_parent_by_class(Platform)
+        return self._get_parent_by_class(Platform)
 
     @property
     def children(self):

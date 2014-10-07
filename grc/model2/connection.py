@@ -35,11 +35,11 @@ class Connection(Element):
 
     @property
     def source_block(self):
-        return self.source_port.get_parent_by_class(Block)
+        return self.source_port.parent_block
 
     @property
     def sink_block(self):
-        return self.sink_port.get_parent_by_class(Block)
+        return self.sink_port.parent_block
 
     @property
     def endpoints(self):
