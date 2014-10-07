@@ -35,6 +35,7 @@ from PropsDialog import PropsDialog
 from ParserErrorsDialog import ParserErrorsDialog
 import Dialogs
 from FileDialogs import OpenFlowGraphFileDialog, SaveFlowGraphFileDialog, SaveReportsFileDialog, SaveImageFileDialog
+from . Colors import FLOWGRAPH_BACKGROUND_COLOR
 
 gobject.threads_init()
 
@@ -473,6 +474,11 @@ class ActionHandler:
             file_path = SaveImageFileDialog(self.get_page().get_file_path()).run()
             if file_path is not None:
                 pixbuf = self.get_flow_graph().get_drawing_area().get_pixbuf()
+                pixbuf = pixbuf.add_alpha(True,
+                                 FLOWGRAPH_BACKGROUND_COLOR.red / 257,
+                                 FLOWGRAPH_BACKGROUND_COLOR.green / 257,
+                                 FLOWGRAPH_BACKGROUND_COLOR.blue / 257
+                )
                 pixbuf.save(file_path, IMAGE_FILE_EXTENSION[1:])
         ##################################################
         # Gen/Exec/Stop
