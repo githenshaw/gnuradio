@@ -17,10 +17,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Element, exceptions
+from . import exceptions
+from . element import BlockChildElement
 
 
-class BasePort(Element):
+class BasePort(BlockChildElement):
     """Common elements of stream and message ports"""
 
     # Consts for directions
@@ -50,21 +51,6 @@ class BasePort(Element):
         for connection in self.parent_flowgraph.connections:
             if self in connection.ports:
                 yield connection
-
-    def rewrite(self):
-        super(BasePort, self).rewrite()
-        params = self.parent_block.params  # todo: replace by a dict with current param values
-        for atrrib_name, callback in self.rewrite_actions.iteritems():
-            try:
-                value = callback(**params)
-                setattr(self, atrrib_name, value)
-            except Exception as e:
-                raise exceptions.BlockException(e)
-
-    def on_rewrite(self, **kwargs):
-        for attr_name, callback in kwargs.iteritems():
-            if attr_name in self.__dict__:
-                self.rewrite_actions[attr_name] = callback
 
 
 class StreamPort(BasePort):

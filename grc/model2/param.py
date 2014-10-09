@@ -18,10 +18,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from itertools import imap
-from . import Element, FlowGraph
 
+from . element import BlockChildElement
 
-class Param(Element):
+class Param(BlockChildElement):
 
     def __init__(self, parent, name, key, value_type=None, default_value=None):
         super(Param, self).__init__(parent)

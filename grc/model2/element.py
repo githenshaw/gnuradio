@@ -17,12 +17,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Block, FlowGraph, Platform
+from . import Block, FlowGraph, Platform, exceptions
 
 
 class Element(object):
 
     def __init__(self, parent):
+        super(Element, self).__init__()
         self._parent = parent
         self._children = []
         try:
@@ -30,10 +31,10 @@ class Element(object):
         except AttributeError:
             pass
 
-    def _get_parent_by_class(self, cls):
+    def get_parent_by_class(self, cls):
         parent = self.parent
         return parent if isinstance(parent, cls) else \
-            parent._get_parent_by_class(cls) if parent else None
+            parent.get_parent_by_class(cls) if parent else None
 
     @property
     def parent(self):
@@ -47,7 +48,7 @@ class Element(object):
          Returns:
             a block object or None
         """
-        return self._get_parent_by_class(Block)
+        return self.get_parent_by_class(Block)
 
     @property
     def parent_flowgraph(self):
@@ -56,7 +57,7 @@ class Element(object):
          Returns:
             a flow-graph object or None
         """
-        return self._get_parent_by_class(FlowGraph)
+        return self.get_parent_by_class(FlowGraph)
 
     @property
     def platform(self):
@@ -65,7 +66,7 @@ class Element(object):
          Returns:
             a platform object or None
         """
-        return self._get_parent_by_class(Platform)
+        return self.get_parent_by_class(Platform)
 
     @property
     def children(self):
@@ -87,3 +88,49 @@ class Element(object):
         """
         for child in self.children:
             child.rewrite()
+
+
+class BlockChildElement(Element):
+    """Adds install rewrite callbacks for specific obt attributes"""
+
+    def __init__(self, parent):
+        super(BlockChildElement, self).__init__(parent)
+        self.rewrite_actions = {}
+
+    def rewrite(self):
+        """Perform a rewrite based on a set of callbacks"""
+        super(BlockChildElement, self).rewrite()
+        params = self.parent_block.params_namespace
+        for target, callback_or_param_name in self.rewrite_actions.iteritems():
+            try:
+                if callable(callback_or_param_name):
+                    value = callback_or_param_name(params)
+                else:
+                    value = params[callback_or_param_name]
+
+                setattr(self, target, value)
+
+            except Exception as e:
+                raise exceptions.BlockException(e)
+
+    def on_rewrite(self, **kwargs):
+        """This installs a number of callbacks in the objects rewrite function
+
+        The object must a child of a Block. The key of each argument must be a
+        valid attribute of the object. The values are callables with a single
+        argument. On rewrite a dict of parameter keys and evaluated value is
+        passed.
+
+        As a shorthand a parameter key (string) can be passed instead of a
+        callable. The parameter value is used to update the attribute.
+        """
+        invalid_attr_names = []
+        for attr_name, callback in kwargs.iteritems():
+            if hasattr(self, attr_name):  #todo: exclude methods
+                self.rewrite_actions[attr_name] = callback
+            else:
+                invalid_attr_names.append(attr_name)
+        if invalid_attr_names:
+            raise exceptions.BlockSetupException(
+                "No port attribute(s) founds for " + str(invalid_attr_names)
+            )

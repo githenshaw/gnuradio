@@ -20,7 +20,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 from collections import OrderedDict
 from itertools import chain
 
-from . import Element, Param, exceptions
+from . import Param, exceptions
+from . element import Element
 from . param import IdParam
 from . port import BasePort, MessageSink, MessageSource, StreamSink, StreamSource
 
