@@ -17,11 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import exceptions
+from __future__ import absolute_import, division, print_function
 
-from . platform import Platform
-from . flowgraph import FlowGraph
-from . block import Block
-from . port import StreamSink, StreamSource, MessageSink, MessageSource
-from . param import Param
+from . blocks import Block
 from . connection import Connection
+from . flowgraph import FlowGraph
+

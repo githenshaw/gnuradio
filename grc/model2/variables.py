@@ -17,5 +17,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from block_xml_loader import load_block_xml
-from block_category_loader import load_category_tree_xml
+from __future__ import absolute_import, division, print_function
+
+from . base import Element
+
+class Variable(Element):
+
+    def __init__(self, parent):
+        super(Variable, self).__init__(parent)
+
+        value = None

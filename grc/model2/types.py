@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+from __future__ import absolute_import, division, print_function
+
 from collections import namedtuple
 
 PortDType = namedtuple("PortDType", "name sizeof color")
@@ -32,22 +34,28 @@ def add_port_dtype(name, sizeof, color, *keys):
 add_port_dtype('Complex Float 64',   16, '#CC8C69', 'fc64')
 add_port_dtype('Complex Float 32',    8, '#3399FF', 'fc64', 'complex')
 
-add_port_dtype('Float 64' ,           8, '#66CCCC', 'f64')
-add_port_dtype('Float 32' ,           4, '#FF8C69', 'f32', 'float')
+add_port_dtype('Float 64',            8, '#66CCCC', 'f64')
+add_port_dtype('Float 32',            4, '#FF8C69', 'f32', 'float')
 
 add_port_dtype('Complex Integer 64', 16, '#66CC00', 'sc64')
 add_port_dtype('Complex Integer 32',  8, '#33cc66', 'sc32')
 add_port_dtype('Complex Integer 16',  4, '#cccc00', 'sc16')
-add_port_dtype('Complex Integer 8' ,  2, '#cc00cc', 'sc8')
+add_port_dtype('Complex Integer 8',   2, '#cc00cc', 'sc8')
 
 add_port_dtype('Integer 64',          8, '#99FF33', 's64')
 add_port_dtype('Integer 32',          4, '#00FF99', 's32', 'int')
 add_port_dtype('Integer 16',          2, '#FFFF66', 's16', 'short')
-add_port_dtype('Integer 8' ,          1, '#FF66FF', 's8' , 'byte')  # uint?
+add_port_dtype('Integer 8',           1, '#FF66FF', 's8',  'byte')  # uint?
 
 
-class ParamType(object):
+class ParamVType(object):
 
     def __init__(self, name, aliases):
         self.name = name
         self.aliases = aliases
+
+    def parse(self, value):
+        return value
+
+    def validate(self):
+        pass

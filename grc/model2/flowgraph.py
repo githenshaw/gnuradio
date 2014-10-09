@@ -17,8 +17,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import exceptions, Block, Connection
-from . element import Element
+from __future__ import absolute_import, division, print_function
+
+from collections import MutableMapping
+
+from . import exceptions
+from . base import Element
+from . import Block, Connection
 
 
 class FlowGraph(Element):
@@ -28,8 +33,10 @@ class FlowGraph(Element):
 
         self.blocks = []
         self.connections = []
+        self.variables = {}
 
         self.options = None
+        self.namespace = _FlowGraphNamespace(self.variables)
 
     def add_block(self, key_or_block):
         """Add a new block to the flow-graph
@@ -52,7 +59,7 @@ class FlowGraph(Element):
         else:
             raise exceptions.BlockException("")
 
-        self.blocks[block.id] = block
+        self.blocks.append(block)
 
     def make_connection(self, endpoint_a, endpoint_b):
         """Add a connection between flow-graphs
@@ -76,5 +83,52 @@ class FlowGraph(Element):
 
     def rewrite(self):
         # todo: update blocks
-        # todo: update namespace
+        self.namespace.reset()
         super(FlowGraph, self).rewrite()
+
+    def execute(self, expr):
+        return eval(expr, None, self.namespace)
+
+
+class _FlowGraphNamespace(MutableMapping):
+    """A dict class that calls variables for missing items"""
+
+    def __init__(self, variables, defaults=None):
+
+        self.variables = variables
+        self.defaults = defaults if defaults else {}
+
+        self._namespace = dict(self.defaults)
+        self._seen = set()
+
+    def __getitem__(self, key):
+        if key in set:
+            raise RuntimeError("Circular dependency")
+        try:
+            value = self._namespace[key]
+            self._seen.clear()
+
+        except KeyError:
+            if key in self.variables:
+                self._seen.add(key)
+                value = self.variables[key].value
+            else:
+                raise
+
+        return value
+
+    def __setitem__(self, key, value):
+        self._namespace[key] = value
+
+    def __delitem__(self, key):
+        del self._namespace[key]
+
+    def __len__(self):
+        return len(self._namespace)
+
+    def __iter__(self):
+        return iter(self._namespace)
+
+    def reset(self):
+        self._namespace.clear()
+        self._namespace.update(self.defaults)

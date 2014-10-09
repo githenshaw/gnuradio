@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import tempfile
 
-from .. block_xml_loader import load_category_tree_xml
+from .. import load_category_tree_xml
 
 
 category_tree_test_data = """

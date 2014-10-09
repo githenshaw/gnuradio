@@ -17,7 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Block, FlowGraph, Platform, exceptions
+from __future__ import absolute_import, division, print_function
+
+from . import exceptions
 
 
 class Element(object):
@@ -48,7 +50,8 @@ class Element(object):
          Returns:
             a block object or None
         """
-        return self.get_parent_by_class(Block)
+        from . blocks import BaseBlock
+        return self.get_parent_by_class(BaseBlock)
 
     @property
     def parent_flowgraph(self):
@@ -57,6 +60,7 @@ class Element(object):
          Returns:
             a flow-graph object or None
         """
+        from . flowgraph import FlowGraph
         return self.get_parent_by_class(FlowGraph)
 
     @property
@@ -66,6 +70,7 @@ class Element(object):
          Returns:
             a platform object or None
         """
+        from . platform import Platform
         return self.get_parent_by_class(Platform)
 
     @property

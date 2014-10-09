@@ -17,19 +17,24 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+
+
 from collections import OrderedDict
 from itertools import chain
 
-from . import Param, exceptions
-from . element import Element
-from . param import IdParam
-from . port import BasePort, MessageSink, MessageSource, StreamSink, StreamSource
+from . import exceptions
+from . base import Element
+from . params import Param, IdParam
+from . ports import BasePort, MessageSink, MessageSource, StreamSink, StreamSource
 
 
 class BaseBlock(Element):
 
     key = 'key'  # key is a unique string
     name = 'label'
+
+    import_template = ''
+    make_template = ''
 
     def __init__(self, parent, **kwargs):
         super(BaseBlock, self).__init__(parent)
@@ -62,7 +67,6 @@ class BaseBlock(Element):
         """unique identifier for this block within the flow-graph"""
         return self.params['id'].value
 
-
     def add_port(self, port):
         """Add a port to this block
 
@@ -88,7 +92,6 @@ class BaseBlock(Element):
 
     def add_message_source(self, **kwargs):
         return self.add_port(MessageSource(self, **kwargs))
-
 
     def add_param(self, *args, **kwargs):
         """Add a param to this block

@@ -17,8 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import exceptions
-from . element import BlockChildElement
+from __future__ import absolute_import, division, print_function
+
+from . base import BlockChildElement
 
 
 class BasePort(BlockChildElement):
@@ -57,7 +58,7 @@ class StreamPort(BasePort):
     """Stream ports have a data type and vector length"""
 
     dtype = None
-    vlen = 0
+    vlen = 1
 
     def __init__(self, parent, dtype, vlen=1, **kwargs):
         super(StreamPort, self).__init__(parent, dtype=dtype, vlen=vlen, **kwargs)

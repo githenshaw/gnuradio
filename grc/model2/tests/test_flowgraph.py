@@ -17,5 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from block_xml_loader import load_block_xml
-from block_category_loader import load_category_tree_xml
+from .. import FlowGraph
+
+def test_flowgraph():
+    fg = FlowGraph()

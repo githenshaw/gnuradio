@@ -17,19 +17,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from . import Element, Block
+from __future__ import absolute_import, division, print_function
+
+from . base import Element
 
 
 class Connection(Element):
 
     def __init__(self, parent, port_a, port_b):
-        super(Element, self).__init__(parent)
+        super(Connection, self).__init__(parent)
         if port_a.is_sink:
             port_a, port_b = port_b, port_a
         if not (port_a.is_source and port_b.is_source):
             raise ValueError("Can't make connection.")
-
-        self.ports = (port_a, port_b)
         self.source_port = port_a
         self.sink_port = port_b
 

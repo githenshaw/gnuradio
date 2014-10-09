@@ -18,7 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 
-from .. import Block
+from .. blocks import Block
 from . import ParseXML
 
 
@@ -45,36 +45,39 @@ def load_block_xml(xml_file):
 
 BLOCK_TEMPLATE = """\
 class XMLBlock(Block):
-    key    = "{{ n['key'] }}"
-    name   = "{{ n['name'] }}"
-    domain = "{{ n['domain'] }}"
+    key    = "${ n['key'] }"
+    name   = "${ n['name'] }"
+
+    import_template = "${ n['import'] }"
+    make_template   = "${ n['make'] }"
 
     def setup(self, **kwargs):
         super(XMLBlock, self).setup(**kwargs)
 
         # params
-        {% for param_n in n['params'] %}
+        % for param_n in n['params']:
         self.add_param(
-            key = "{{ param_n['name'] }}",
-            name = "{{ param_n['name'] }}",
-            value_type = {{  }},
-            default_value = {{ }},
+            key = "${ param_n['key'] }",
+            name = "${ param_n['name'] }",
+            vtype = ${  },
+            default = ${ param_n['value'] },
         )
-        {% endfor %}
+        % endfor
 
         # sinks
-        {% for sink_n in n['sink'] %}
+        % for sink_n in n['sink']:
         self.add_port(
-            name = {{  }},
-            type = {{  }},
-            vlen = {{  }},
+            name = ${  },
+            type = ${  },
+            vlen = ${  },
+            nports = ${  },
+            optional = ${  },
+            hide = ${  },
         )
-        {% endfor %}
+        % endfor
 
-        # source
-        {% for source_n in n['source'] %}
-        self.add_port()
-        {% endfor %}
+        # sources
+
 """
 
 
