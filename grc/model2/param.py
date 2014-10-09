@@ -23,13 +23,14 @@ from . import Element, FlowGraph
 
 class Param(Element):
 
-    def __init__(self, parent, key, name, value_type=None, default_value=None):
+    def __init__(self, parent, name, key, value_type=None, default_value=None):
         super(Param, self).__init__(parent)
-        self._key = key
         self._name = name
+        self._key = key
 
         self.value_type = value_type
         self.value = self.value_default = default_value
+        self._evaluated = None
 
     @property
     def key(self):
@@ -38,6 +39,14 @@ class Param(Element):
     @property
     def name(self):
         return self._name
+
+    @property
+    def evaluated(self):
+        return self._evaluated
+
+    def rewrite(self):
+        super(Param, self).rewrite()
+        self._evaluated = self.parent_flowgraph.evaluate(self.value)
 
     def validate(self):
         super(Param, self).validate()

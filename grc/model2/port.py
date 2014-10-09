@@ -17,46 +17,32 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-from itertools import ifilter
-
-from . import Element, FlowGraph
-
-VALID_PORT_DIRECTIONS = ("sink", "source")
+from . import Element, exceptions
 
 
-class Port(Element):
-    """Simple Port class"""
+class BasePort(Element):
+    """Common elements of stream and message ports"""
 
-    direction = None
-    domain = None
+    # Consts for directions
+    SINK = "sink"
+    SOURCE = "source"
 
-    def __init__(self, parent, name, dtype, vlen=1, **kwargs):
-        super(Port, self).__init__(parent)
-        self._key = None
-        self._name = name
-        self._dtype = dtype
-        self._vlen = vlen
+    # using class attributes isn't strictly ideal here. However, it allows
+    # setting attribute default by subclassing
+    name = ''
+    direction = ''
+    domain = ''
+    key = None  # set by rewrite of block function  #todo: why keep this here?
 
-    def setup(self, **kwargs):
-        for var_name, value in kwargs.iteritems():
-            for attrib_name in (var_name, '_' + var_name):
-                if getattr(self, attrib_name):
-                    setattr(self, attrib_name, value)
+    def __init__(self, parent, **kwargs):
+        super(BasePort, self).__init__(parent)
 
-    @property
-    def key(self):
-        """ The key of a port is used in the connect function"""
-        return self._key
+        # overwrite class attribute defaults
+        for key, value in kwargs.iteritems():
+            if hasattr(self.__class__, key):
+                setattr(self, key, value)
 
-    @key.setter
-    def key(self, value):
-        if self.dtype != "message" and not str(value).isdigit():
-            raise ValueError("A stream port key must be numeric")
-
-    @property
-    def dtype(self):
-        """The data type of this port"""
-        return self._dtype
+        self.rewrite_actions = {}
 
     @property
     def connections(self):
@@ -65,13 +51,58 @@ class Port(Element):
             if self in connection.ports:
                 yield connection
 
-
-class DynamicPort(Port):
-
-    def __init__(self, parent, key, name, vlen=1, type_param_key='type', **kwargs):
-        super(DynamicPort, self).__init__(parent, key, name, vlen, **kwargs)
-        self._type_param_key = type_param_key
-
     def rewrite(self):
-        super(DynamicPort, self).rewrite()
-        self._dtype = self.parent.params[self._type_param_key]
+        super(BasePort, self).rewrite()
+        params = self.parent_block.params  # todo: replace by a dict with current param values
+        for atrrib_name, callback in self.rewrite_actions.iteritems():
+            try:
+                value = callback(**params)
+                setattr(self, atrrib_name, value)
+            except Exception as e:
+                raise exceptions.BlockException(e)
+
+    def on_rewrite(self, **kwargs):
+        for attr_name, callback in kwargs.iteritems():
+            if attr_name in self.__dict__:
+                self.rewrite_actions[attr_name] = callback
+
+
+class StreamPort(BasePort):
+    """Stream ports have a data type and vector length"""
+
+    dtype = None
+    vlen = 0
+
+    def __init__(self, parent, dtype, vlen=1, **kwargs):
+        super(StreamPort, self).__init__(parent, dtype=dtype, vlen=vlen, **kwargs)
+
+    def validate(self):
+        # todo: check dtype and vlen
+        super(StreamPort, self).validate()
+
+
+class MessagePort(BasePort):
+    """Message ports usually have a fixed key"""
+
+    def __init__(self, parent, key, **kwargs):
+        super(MessagePort, self).__init__(parent, key=key, **kwargs)
+
+
+class StreamSink(StreamPort):
+    name = "in"
+    direction = StreamPort.SINK
+
+
+class StreamSource(StreamPort):
+    name = "out"
+    direction = StreamPort.SOURCE
+
+
+class MessageSink(MessagePort):
+    name = "in"
+    direction = MessagePort.SINK
+
+
+class MessageSource(MessagePort):
+    name = "out"
+    direction = MessagePort.SOURCE

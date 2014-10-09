@@ -18,62 +18,76 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
 from collections import OrderedDict
+from itertools import chain
 
-from . import Element, Port, Param, exceptions
+from . import Element, Param, exceptions
 from . param import IdParam
+from . port import BasePort, MessageSink, MessageSource, StreamSink, StreamSource
 
 
 class BaseBlock(Element):
 
-    key = 'key'  # key is a unique string that is a valid python variable name.
+    key = 'key'  # key is a unique string
     name = 'label'
-    domain = None
 
     def __init__(self, parent, **kwargs):
         super(BaseBlock, self).__init__(parent)
 
         self._ports = {  # the raw/unexpanded/hidden ports are held here
-            'sources': OrderedDict(),  # a dict to hold the source ports this block, indexed by key
-            'sinks': OrderedDict(),  # a dict to hold the sink ports this block, indexed by key
+            'sources': [],  # a dict to hold the source ports this block, indexed by key
+            'sinks': [],  # a dict to hold the sink ports this block, indexed by key
         }
+
         self.params = OrderedDict()
         self.add_param(IdParam(self))
         self.add_param(key='_enabled', name='Enabled', value_type=bool, default_value=True)
 
+        self.params_namespace = {}  # dict of evaluated params
+
         # a list of sink ports currently visible (think hidden ports, bus ports, nports)
-        # filled / updated by rewrite()
-        self.sources = []
+        self.sources = [] # filled / updated by rewrite()
         self.sinks = []
 
+        # call user defined init
         self.setup(**kwargs)
 
     def setup(self, **kwargs):
         """How to construct the block: sinks, sources, parameters"""
-        # here block designers add code for ports and param
-        raise NotImplementedError()
+        # here block designers add code for ports and params
+        pass
 
     @property
     def id(self):
         """unique identifier for this block within the flow-graph"""
         return self.params['id'].value
 
-    def add_port(self, *args, **kwargs):
+
+    def add_port(self, port):
         """Add a port to this block
 
-        Usage options:
-            - a port object
-            - kwargs for port construction
+        Args:
+            - port: instance of BasePort
         """
+        if not isinstance(port, BasePort):
+            raise ValueError("Excepted an instance of BasePort")
         try:
-            port = args[0] if args and isinstance(args[0], Port) else Port(*args, **kwargs)
-            key = str(port.key)
-            ports = self._ports[port.direction]
-            if key in ports:
-                raise exceptions.BlockSetupException("Port key '{}' not unique".format(key))
-            ports[key] = port
+            self._ports[port.direction].append(port)
         except KeyError:
             raise exceptions.BlockSetupException("Unknown port direction")
-        # todo: catch and rethrow Port Exception
+        return port
+
+    def add_stream_sink(self, **kwargs):
+        return self.add_port(StreamSink(self, **kwargs))
+
+    def add_stream_source(self, **kwargs):
+        return self.add_port(StreamSource(self, **kwargs))
+
+    def add_message_sink(self, **kwargs):
+        return self.add_port(MessageSink(self, **kwargs))
+
+    def add_message_source(self, **kwargs):
+        return self.add_port(MessageSource(self, **kwargs))
+
 
     def add_param(self, *args, **kwargs):
         """Add a param to this block
@@ -89,8 +103,18 @@ class BaseBlock(Element):
 
     def rewrite(self):
         """Update the blocks ports"""
-        super(BaseBlock, self).rewrite()
+        # todo: evaluate params
+        self.params_namespace.clear()
+        for key, param in self.params.iteritems():
+            self.params_namespace[key] = param.evaluated
+
+        # todo: rewrite ports
+        for port in chain(self._ports['sinks'], self._ports['sources']):
+            port.rewrite()
+
         # todo: expand nports, form busses, handle port hiding
+
+        #super(BaseBlock, self).rewrite()  # todo: should I even call this?
 
 
 class Block(BaseBlock):

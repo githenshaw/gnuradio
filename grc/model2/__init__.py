@@ -23,6 +23,6 @@ from . import exceptions
 from . platform import Platform
 from . flowgraph import FlowGraph
 from . block import Block
-from . port import Port
+from . port import StreamSink, StreamSource, MessageSink, MessageSource
 from . param import Param
 from . connection import Connection
