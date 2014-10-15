@@ -21,9 +21,14 @@ from __future__ import absolute_import, division, print_function
 
 from . base import Element
 
+
 class Variable(Element):
 
-    def __init__(self, parent):
+    def __init__(self, parent, name, default=None):
         super(Variable, self).__init__(parent)
 
-        value = None
+        self.name = name
+        self.value = default
+
+    def evaluate(self):
+        return self.parent_flowgraph.evaluate(self.value)

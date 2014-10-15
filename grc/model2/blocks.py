@@ -29,9 +29,8 @@ from . ports import BasePort, MessageSink, MessageSource, StreamSink, StreamSour
 
 
 class BaseBlock(Element):
-
-    key = 'key'  # key is a unique string
-    name = 'label'
+    uid = 'uid'     # a unique identifier for this block class
+    name = 'label'  # the name of this block (label in the gui)
 
     import_template = ''
     make_template = ''
@@ -51,7 +50,7 @@ class BaseBlock(Element):
         self.params_namespace = {}  # dict of evaluated params
 
         # a list of sink ports currently visible (think hidden ports, bus ports, nports)
-        self.sources = [] # filled / updated by rewrite()
+        self.sources = []  # filled / updated by rewrite()
         self.sinks = []
 
         # call user defined init

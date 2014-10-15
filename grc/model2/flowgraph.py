@@ -20,10 +20,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 from __future__ import absolute_import, division, print_function
 
 from collections import MutableMapping
+from itertools import chain
 
-from . import exceptions
+import exceptions
 from . base import Element
-from . import Block, Connection
+from . import Block, Connection, Variable
 
 
 class FlowGraph(Element):
@@ -37,6 +38,9 @@ class FlowGraph(Element):
 
         self.options = None
         self.namespace = _FlowGraphNamespace(self.variables)
+
+    def add_variable(self, name):
+        self.variables[name] = Variable(parent=self, name=name)
 
     def add_block(self, key_or_block):
         """Add a new block to the flow-graph
@@ -52,19 +56,14 @@ class FlowGraph(Element):
                 block = self.platform.blocks[key_or_block](parent=self)
             except KeyError:
                 raise exceptions.BlockException("Failed to add block '{}'".format(key_or_block))
-
         elif isinstance(key_or_block, Block):
             block = key_or_block
-
         else:
             raise exceptions.BlockException("")
-
         self.blocks.append(block)
 
     def make_connection(self, endpoint_a, endpoint_b):
-        """Add a connection between flow-graphs
-
-        """
+        """Add a connection between the ports of two blocks"""
         connection = Connection(self, endpoint_a, endpoint_b)
         self.connections.append(connection)
 
@@ -82,11 +81,12 @@ class FlowGraph(Element):
             del element
 
     def rewrite(self):
-        # todo: update blocks
-        self.namespace.reset()
-        super(FlowGraph, self).rewrite()
+        for name, variable in self.variables.iteritems():
+            self.namespace[name] = variable.evaluate()
+        for element in chain(self.blocks, self.connections):
+            element.rewrite()
 
-    def execute(self, expr):
+    def evaluate(self, expr):
         return eval(expr, None, self.namespace)
 
 
@@ -99,23 +99,17 @@ class _FlowGraphNamespace(MutableMapping):
         self.defaults = defaults if defaults else {}
 
         self._namespace = dict(self.defaults)
-        self._seen = set()
+        self._getter_chain = set()
 
     def __getitem__(self, key):
-        if key in set:
-            raise RuntimeError("Circular dependency")
-        try:
-            value = self._namespace[key]
-            self._seen.clear()
+        if not key in self._namespace and key in self.variables:
+            if key in self._getter_chain:
+                raise RuntimeError("Circular dependency")
+            self._getter_chain.add(key)
+            self._namespace[key] = self.variables[key].evaluate()
+            self._getter_chain.remove(key)
 
-        except KeyError:
-            if key in self.variables:
-                self._seen.add(key)
-                value = self.variables[key].value
-            else:
-                raise
-
-        return value
+        return self._namespace[key]
 
     def __setitem__(self, key, value):
         self._namespace[key] = value
@@ -130,5 +124,6 @@ class _FlowGraphNamespace(MutableMapping):
         return iter(self._namespace)
 
     def reset(self):
+        self._getter_chain.clear()
         self._namespace.clear()
         self._namespace.update(self.defaults)

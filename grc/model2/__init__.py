@@ -21,5 +21,5 @@ from __future__ import absolute_import, division, print_function
 
 from . blocks import Block
 from . connection import Connection
+from . variables import Variable
 from . flowgraph import FlowGraph
-

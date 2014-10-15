@@ -21,12 +21,14 @@ from __future__ import absolute_import, division, print_function
 
 from collections import namedtuple
 from functools import partial
-from itertools import imap
+from itertools import imap, count
 
 from . base import BlockChildElement
 
 
 class Param(BlockChildElement):
+
+    uid = 'param'  # a unique identifier for this param class
 
     def __init__(self, parent, name, key, vtype, default=None):
         super(Param, self).__init__(parent)
@@ -61,21 +63,25 @@ class Param(BlockChildElement):
 class IdParam(Param):
     """Parameter of a block used as a unique parameter within a flow-graph"""
 
+    uid = 'id'
+
     def __init__(self, parent):
         super(IdParam, self).__init__(
-            parent, 'ID', 'id', str, default=self._get_unique_id()
+            parent, 'ID', 'id', str, default=self._get_unique_block_id()
         )
 
-    def _get_unique_id(self):
+    def _get_unique_block_id(self):
         """get a unique block id within the flow-graph by trail&error"""
         block = self.parent_block
         blocks = self.parent_flowgraph.blocks
-        for block_id in imap(lambda key: "{}_{}".format(key, block), range(len(blocks))):
+        for block_id in imap(lambda key: "{}_{}".format(key, block), count()):
             if block_id not in blocks:
                 return block_id
 
 
 class OptionsParam(Param):
+
+    uid = 'options'
 
     # careful: same empty dict for all instances
     Option = partial(namedtuple("Option", "name value extra"), extra={})
