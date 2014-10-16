@@ -92,7 +92,9 @@ class Element(object):
         Validation shall only check the validity of the flow-graph, not change any values
         """
         for child in self.children:
-            child.rewrite()
+            # py3.3: yield from
+            for error in child.validate():
+                yield error
 
 
 class BlockChildElement(Element):

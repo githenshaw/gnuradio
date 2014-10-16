@@ -19,25 +19,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from __future__ import absolute_import, division, print_function
 
+import re
 from collections import namedtuple
 from functools import partial
 from itertools import imap, count
 
+from . import exceptions
 from . base import BlockChildElement
 
 
 class Param(BlockChildElement):
 
-    uid = 'param'  # a unique identifier for this param class
-
-    def __init__(self, parent, name, key, vtype, default=None):
+    def __init__(self, parent, name, key, vtype, default=None, validator=None):
         super(Param, self).__init__(parent)
         self._name = name
         self._key = key
+        self._evaluated = None
 
         self.vtype = vtype
+        self.validator = validator
         self.value = self.default = default  # todo get vtype default
-        self._evaluated = None
 
     @property
     def key(self):
@@ -56,14 +57,21 @@ class Param(BlockChildElement):
         self._evaluated = self.parent_flowgraph.evaluate(self.value)
 
     def validate(self):
-        super(Param, self).validate()
-        # todo: check param validity
+        for error in super(Param, self).validate():
+            yield error
+        # todo: check param type validity
+
+        if callable(self.validator) and not self.validator(self.evaluated):
+            yield exceptions.ValidationException(
+                self, "Validator failed: " + repr(self.validator)
+            )
 
 
 class IdParam(Param):
     """Parameter of a block used as a unique parameter within a flow-graph"""
 
-    uid = 'id'
+    blacklist = []
+    _id_matcher = re.compile('^[a-z|A-Z]\w*$')
 
     def __init__(self, parent):
         super(IdParam, self).__init__(
@@ -78,10 +86,30 @@ class IdParam(Param):
             if block_id not in blocks:
                 return block_id
 
+    def validate(self):
+        for error in super(IdParam, self).validate():
+            yield error
+
+        id_value = self.evaluated
+        is_duplicate_id = any(
+            block.id == id_value
+            for block in self.parent_flowgraph.blocks if block is not self
+        )
+        if not self._id_matcher.match(id_value):
+            yield exceptions.ValidationException(
+                self, "Invalid ID"
+            )
+        elif id_value in self.blacklist:
+            yield exceptions.ValidationException(
+                self, "ID is blacklisted"
+            )
+        elif is_duplicate_id:
+            yield exceptions.ValidationException(
+                self, "Duplicate ID"
+            )
+
 
 class OptionsParam(Param):
-
-    uid = 'options'
 
     # careful: same empty dict for all instances
     Option = partial(namedtuple("Option", "name value extra"), extra={})
@@ -99,4 +127,13 @@ class OptionsParam(Param):
             if not isinstance(option, self.Option):
                 self.options.append(self.Option(*option))
 
-        super(Param, self).rewrite()
+        super(OptionsParam, self).rewrite()
+
+    def validate(self):
+        for error in super(OptionsParam, self).validate():
+            yield error
+        value = self.evaluated
+        if not self.allow_arbitrary_values and not value in imap(lambda o: o.value, self.options):
+            yield exceptions.ValidationException(
+                self, "Value '{}' not allowed".format(value)
+            )

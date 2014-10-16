@@ -30,3 +30,13 @@ class BlockException(GRCBaseException):
 
 class BlockSetupException(GRCBaseException):
     pass
+
+
+class ValidationException(GRCBaseException):
+
+    def __init__(self, source, message):
+        self.source = source
+        self.message = message
+
+    def __str__(self):
+        return self.message
