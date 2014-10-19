@@ -22,7 +22,7 @@ from __future__ import absolute_import, division, print_function
 from collections import MutableMapping
 from itertools import chain
 
-import exceptions
+from . import exceptions
 from . base import Element
 from . import Block, Connection, Variable
 
@@ -39,8 +39,8 @@ class FlowGraph(Element):
         self.options = None
         self.namespace = _FlowGraphNamespace(self.variables)
 
-    def add_variable(self, name):
-        self.variables[name] = Variable(parent=self, name=name)
+    def add_variable(self, name, default=None):
+        self.variables[name] = Variable(self, name, default)
 
     def add_block(self, key_or_block):
         """Add a new block to the flow-graph
@@ -68,9 +68,6 @@ class FlowGraph(Element):
         self.connections.append(connection)
 
     def remove(self, elements):
-        """
-
-        """
         for element in elements:
             if isinstance(element, Block):
                 # todo: remove connections to this block?
@@ -81,17 +78,23 @@ class FlowGraph(Element):
             del element
 
     def rewrite(self):
+        self.namespace.reset()
+        # todo: decide if lazy var eval is better (if yes, skip and remove finalize
         for name, variable in self.variables.iteritems():
-            self.namespace[name] = variable.evaluate()
+            if name not in self.namespace:
+                self.namespace[name] = variable.evaluate()
+        self.namespace.finalize()
+        # eval blocks first, then connections
         for element in chain(self.blocks, self.connections):
             element.rewrite()
 
     def evaluate(self, expr):
-        return eval(expr, None, self.namespace)
+        """Evaluate an expr in the flow-graph namespace"""
+        return eval(str(expr), None, self.namespace)
 
 
 class _FlowGraphNamespace(MutableMapping):
-    """A dict class that calls variables for missing items"""
+    """A dict class that auto-calls variables for missing names"""
 
     def __init__(self, variables, defaults=None):
 
@@ -99,20 +102,26 @@ class _FlowGraphNamespace(MutableMapping):
         self.defaults = defaults if defaults else {}
 
         self._namespace = dict(self.defaults)
-        self._getter_chain = set()
+        self._dependency_chain = []
+        self._finalized = False
 
     def __getitem__(self, key):
-        if not key in self._namespace and key in self.variables:
-            if key in self._getter_chain:
-                raise RuntimeError("Circular dependency")
-            self._getter_chain.add(key)
-            self._namespace[key] = self.variables[key].evaluate()
-            self._getter_chain.remove(key)
+        if key in self._dependency_chain:
+            raise RuntimeError("Circular dependency")
+
+        if not self._finalized and key not in self._namespace and key in self.variables:
+            self._dependency_chain.append(key)
+            self[key] = self.variables[key].evaluate()
+            self._dependency_chain.remove(key)
+
+        if self._dependency_chain:
+            self.variables[self._dependency_chain[-1]].dependencies.add(key)
 
         return self._namespace[key]
 
     def __setitem__(self, key, value):
-        self._namespace[key] = value
+        if not self._finalized:
+            self._namespace[key] = value
 
     def __delitem__(self, key):
         del self._namespace[key]
@@ -123,7 +132,12 @@ class _FlowGraphNamespace(MutableMapping):
     def __iter__(self):
         return iter(self._namespace)
 
+    def finalize(self):
+        del self._dependency_chain[:]
+        self._finalized = True
+
     def reset(self):
-        self._getter_chain.clear()
+        del self._dependency_chain[:]
         self._namespace.clear()
         self._namespace.update(self.defaults)
+        self._finalized = False

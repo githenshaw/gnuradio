@@ -28,7 +28,9 @@ class Variable(Element):
         super(Variable, self).__init__(parent)
 
         self.name = name
-        self.value = default
+        self.value = self.default = default
+        self.dependencies = set()  # filled on rewrite, used to figure out variable order
 
     def evaluate(self):
+        self.dependencies.clear()
         return self.parent_flowgraph.evaluate(self.value)

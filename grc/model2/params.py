@@ -133,7 +133,7 @@ class OptionsParam(Param):
         for error in super(OptionsParam, self).validate():
             yield error
         value = self.evaluated
-        if not self.allow_arbitrary_values and not value in imap(lambda o: o.value, self.options):
+        if not self.allow_arbitrary_values and value not in imap(lambda o: o.value, self.options):
             yield exceptions.ValidationException(
                 self, "Value '{}' not allowed".format(value)
             )
