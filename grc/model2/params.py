@@ -30,11 +30,12 @@ from . base import BlockChildElement
 
 class Param(BlockChildElement):
 
-    def __init__(self, parent, name, key, vtype, default=None, validator=None):
+    def __init__(self, parent, name, key, vtype, default=None, category='', validator=None):
         super(Param, self).__init__(parent)
         self._name = name
         self._key = key
         self._evaluated = None
+        self._category = category
 
         self.vtype = vtype
         self.validator = validator
@@ -51,6 +52,11 @@ class Param(BlockChildElement):
     @property
     def evaluated(self):
         return self._evaluated
+
+    @property
+    def category(self):
+        """Meta-info for the GUI placement of this param"""
+        return self._category
 
     def rewrite(self):
         super(Param, self).rewrite()

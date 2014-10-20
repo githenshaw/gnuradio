@@ -35,7 +35,7 @@ def load_block_xml(xml_file):
 
 
     n['block_wrapper_path'] = xml_file  # inject block wrapper path
-    if not 'domain' in n:
+    if 'domain' not in n:
         n['domain'] = None
 
     # get block instance and add it to the list of blocks
@@ -45,11 +45,11 @@ def load_block_xml(xml_file):
 
 BLOCK_TEMPLATE = """\
 class XMLBlock(Block):
-    key    = "${ n['key'] }"
-    name   = "${ n['name'] }"
+    key    = "${ n['key'][0] }"
+    name   = "${ n['name'][0] }"
 
-    import_template = "${ n['import'] }"
-    make_template   = "${ n['make'] }"
+    import_template = "${ n['import'][0] }"
+    make_template   = "${ n['make'][0] }"
 
     def setup(self, **kwargs):
         super(XMLBlock, self).setup(**kwargs)
@@ -83,16 +83,29 @@ class XMLBlock(Block):
 
 def construct_block_class_from_nested_data(nested_data):
     n = nested_data
+    params = {params_n['key'][0]: params_n for params_n in n.get('params', [])}
 
-    class XMLBlock(Block):
-        key = n['key']
-        name = n['name']
-        domain = None
+    for key, params_n in params.iteritems():
+        value = params_n['value'][0]
+        vtype = params_n['type'][0]
+        if '$' in vtype:
+            print("Dynamic vtype for '{key:}': {vtype:}".format(**locals()))
+        if vtype == 'str':
+            value = _parse_string_literal(value)
+    sinks = []
+    for sink_n in n['sinks']:
+        pass
 
 
-    return XMLBlock
+    return 1
 
 
-def str_to_cls_name(name):
-    return name
 
+def _parse_string_literal(value):
+    try:
+        evaluated = eval(value, [])
+        if isinstance(evaluated, str):
+            value = evaluated
+    except:
+        pass
+    return '"{}"'.format(value.replace('"', '\\"'))

@@ -105,11 +105,14 @@ def _from_file(xml):
     nested_data = OrderedDict()
     for elem in xml:
         key, value = _from_file(elem).items()[0]
-        if nested_data.has_key(key): nested_data[key].append(value)
-        else: nested_data[key] = [value]
-    #delistify if the length of values is 1
+        if key in nested_data:
+            nested_data[key].append(value)
+        else:
+            nested_data[key] = [value]
+    # delistify if the length of values is 1
     for key, values in nested_data.iteritems():
-        if len(values) == 1: nested_data[key] = values[0]
+        if len(values) == 1:
+            nested_data[key] = values[0]
 
     return OrderedDict({tag: nested_data})
 
