@@ -25,6 +25,7 @@ from collections import defaultdict
 
 from . _consts import BLOCK_CLASS_FILE_EXTENSION, BLOCK_XML_EXTENSION, BLOCK_TREE_EXTENSION
 from . import legacy
+from . types import ParamVType, PortDType
 
 
 class BlockLoadException(Exception):
@@ -32,6 +33,9 @@ class BlockLoadException(Exception):
 
 
 class Platform(object):
+
+    param_vtypes = {}
+    port_dtypes = {}
 
     def __init__(self, name, website, version, block_paths):
         """
@@ -55,12 +59,12 @@ class Platform(object):
 
         self._block_paths = block_paths
 
-        self._blocks = {}
+        self.blocks = {}
 
     def load_blocks(self):
         """load the blocks and block tree from the search paths"""
         # reset
-        self._blocks.clear()
+        self.blocks.clear()
         categories = defaultdict(set)
         # first, load category tree files
         for block_tree_file in self.iter_block_files(BLOCK_TREE_EXTENSION):
@@ -74,7 +78,7 @@ class Platform(object):
         for block_class_file in self.iter_block_files():
             try:
                 block = self.import_block_class_file(block_class_file)
-                self._blocks[block.key] = block
+                self.blocks[block.key] = block
                 pass
             except BlockLoadException:
                 # TODO: better use warnings here?
@@ -110,10 +114,6 @@ class Platform(object):
         return '{}(name="{}", ...)'.format(self.__class__.__name__, self.name)
 
     @property
-    def blocks(self):
-        return self._blocks
-
-    @property
     def name(self):
         return self._name
 
@@ -136,3 +136,18 @@ class Platform(object):
     @property
     def block_paths(self):
         return self._block_paths
+
+    @classmethod
+    def register_param_vtype(cls, param_type):
+        if not isinstance(param_type, ParamVType):
+            raise Exception("")
+
+        for name in param_type.names:
+            cls.param_vtypes[name] = param_type
+
+    @classmethod
+    def register_port_dtype(cls, port_dtype):
+        if not isinstance(port_dtype, PortDType):
+            raise Exception("")
+        for name in port_dtype.names:
+            cls.port_dtypes[name] = port_dtype

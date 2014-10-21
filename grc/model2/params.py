@@ -76,7 +76,7 @@ class Param(BlockChildElement):
 class IdParam(Param):
     """Parameter of a block used as a unique parameter within a flow-graph"""
 
-    blacklist = []
+    blacklist = ['self', 'options', 'gr', 'blks2', 'wxgui', 'wx', 'math', 'forms', 'firdes'] #+ filter(lambda x: not x.startswith('_'), dir(gr.top_block())) + dir(__builtin__)
     _id_matcher = re.compile('^[a-z|A-Z]\w*$')
 
     def __init__(self, parent):
