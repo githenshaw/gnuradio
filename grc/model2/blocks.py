@@ -65,31 +65,37 @@ class BaseBlock(Element):
         """unique identifier for this block within the flow-graph"""
         return self.params['id'].value
 
-    def add_port(self, port):
+    def add_port(self, cls, *args, **kwargs):
         """Add a port to this block
 
         Args:
-            - port: instance of BasePort
+            - port_object_or_class: instance or subclass of BasePort
+            - args, kwargs: arguments to pass the the port
         """
-        if not isinstance(port, BasePort):
+        if issubclss(cls, BasePort):
+            port = cls(self, *args, **kwargs)
+        elif isinstance(cls, BasePort):
+            port = cls
+        else
             raise ValueError("Excepted an instance of BasePort")
+
         try:
             self._ports[port.direction].append(port)
         except KeyError:
             raise exceptions.BlockSetupException("Unknown port direction")
         return port
 
-    def add_stream_sink(self, **kwargs):
-        return self.add_port(StreamSink(self, **kwargs))
+    def add_stream_sink(self, *args, **kwargs):
+        return self.add_port(StreamSink, *args, **kwargs))
 
-    def add_stream_source(self, **kwargs):
-        return self.add_port(StreamSource(self, **kwargs))
+    def add_stream_source(self, *args, **kwargs):
+        return self.add_port(StreamSource, *args, **kwargs))
 
-    def add_message_sink(self, **kwargs):
-        return self.add_port(MessageSink(self, **kwargs))
+    def add_message_sink(self, *args, **kwargs):
+        return self.add_port(MessageSink, *args, **kwargs))
 
-    def add_message_source(self, **kwargs):
-        return self.add_port(MessageSource(self, **kwargs))
+    def add_message_source(self, *args, **kwargs):
+        return self.add_port(MessageSource, *args, **kwargs))
 
     def add_param(self, *args, **kwargs):
         """Add a param to this block
@@ -98,7 +104,14 @@ class BaseBlock(Element):
             - a param object
             - kwargs for port construction
         """
-        param = args[0] if args and isinstance(args[0], Param) else Param(*args, **kwargs)
+        if args and isinstance(args[0], Param):
+            param = args[0]
+        elif args and issubclass(args[0], Param)
+            param = args[0](*args[1:], **kwargs)
+        elif issubclass(kwargs.get('cls', None), Param):
+            param = kwargs.pop('cls')(*args, **kwargs)
+        else:
+            param = Param(*args, **kwargs)
         key = str(param.key)
         if key in self.params:
             raise exceptions.BlockSetupException("Param key '{}' not unique".format(key))

@@ -83,19 +83,83 @@ class XMLBlock(Block):
 
 def construct_block_class_from_nested_data(nested_data):
     n = nested_data
-    params = {params_n['key'][0]: params_n for params_n in n.get('params', [])}
 
-    for key, params_n in params.iteritems():
-        value = params_n['value'][0]
-        vtype = params_n['type'][0]
-        if '$' in vtype:
-            print("Dynamic vtype for '{key:}': {vtype:}".format(**locals()))
-        if vtype == 'str':
-            value = _parse_string_literal(value)
+    for key in 'key name make import'.split():
+        n[key] = n[key][0]
+
+    params_raw = {
+        param_n['key'][0]: {
+            key: value[0]
+            for key, value in params_n.iteritems()
+        for params_n in n.get('params', [])
+    }
+    def resolve_template(expr):
+        if '$' in expr:  # template
+            try:
+                param = params_raw[expr[1:]] # simple subst
+                return param.get('value', None), param['key']
+            except KeyError:
+                pass
+            # todo parse/eval advanced template
+        return expr, None
+
+    def set_optional(d, key, source, skey=None):
+        value = source.get(skey or key, [None])[0]
+        if value: d[key] = value
+
+    params = []
+    for key, param_n in params_raw.iteritems():
+        param, rewrites = {}, {}
+        param['key'] = param_n['key'][0]
+        param['name'] = param_n['name'][0]
+        vtype, set_from = resolve_template(param_n.get('type', ['raw'])[0])
+        if vtype == 'enum':
+            vtype = 'raw'
+            param['cls'] = OptionsParam
+            param['options'] = tuple(
+                tuple(
+                    option_n['key'][0],
+                    option_n['name'][0],
+                    dict(opt_n.split(':', 2)
+                        for (opt_n,) in option_n.get('opt', []) if ':' in opt_n
+                    )
+                ) for option_n in params_.get(['options', [])
+            )
+        param['vtype'] = vtype or 'raw'
+        if set_from: rewrites['vtype'] = set_from
+        param['category'] = param_n.get('tab', [''])[0]
+        #todo: parse hide tag
+        value = param_n.get('value', None)[0]
+        if value: param['value'] = value
+        params.append(param)
+
     sinks = []
     for sink_n in n['sinks']:
-        pass
+        sink = {}
+        sink['name'] = sink_n['name'][0]
+        dtype, set_from = resolve_template(sink_n['type'][0])
+        if dtype == 'message':
+            sink['key'] = sink['name']
+            sink['cls'] = MessageSink
+        else:
+            sink['dtype'] = dtype
+            vlen = sink_n.get('vlen', [])[0]
+            if vlen: sink['vlen'] = vlen
 
+        sinks.append(sink)
+
+    class XMLDefinedBlock(Block):
+        key = n['key']
+        name = n['name']
+
+        make_template = n['make']
+        import_templdate = n['import']
+
+        def setup(self, **kwargs):
+            super(XMLBlock, self).setup(**kwargs)
+
+            for param, rewrites in params:
+                self.add_param(**param).on_rewrite(*rewrites)
 
     return 1
 
