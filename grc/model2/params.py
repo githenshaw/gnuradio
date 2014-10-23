@@ -65,12 +65,20 @@ class Param(BlockChildElement):
     def validate(self):
         for error in super(Param, self).validate():
             yield error
-        # todo: check param type validity
 
-        if callable(self.validator) and not self.validator(self.evaluated):
-            yield exceptions.ValidationException(
-                self, "Validator failed: " + repr(self.validator)
-            )
+        if not self.vtype in self.platform.vtypes:
+            yield self, "Unknown param value type '{}' "
+
+        try:
+            # value type validation
+            self.platform.vtypes[self.vtype].validate(self.evaluated)
+            # custom validator
+            if callable(self.validator) and not self.validator(self.evaluated):
+                yield exceptions.ValidationException(
+                    self, "Validator failed: " + repr(self.validator)
+                )
+        except Exception as e:
+            yield self, "Failed to validate " + e.args[0]
 
 
 class IdParam(Param):
