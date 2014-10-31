@@ -72,11 +72,11 @@ class BaseBlock(Element):
             - port_object_or_class: instance or subclass of BasePort
             - args, kwargs: arguments to pass the the port
         """
-        if issubclss(cls, BasePort):
+        if issubclass(cls, BasePort):
             port = cls(self, *args, **kwargs)
         elif isinstance(cls, BasePort):
             port = cls
-        else
+        else:
             raise ValueError("Excepted an instance of BasePort")
 
         try:
@@ -86,16 +86,16 @@ class BaseBlock(Element):
         return port
 
     def add_stream_sink(self, *args, **kwargs):
-        return self.add_port(StreamSink, *args, **kwargs))
+        return self.add_port(StreamSink, *args, **kwargs)
 
     def add_stream_source(self, *args, **kwargs):
-        return self.add_port(StreamSource, *args, **kwargs))
+        return self.add_port(StreamSource, *args, **kwargs)
 
     def add_message_sink(self, *args, **kwargs):
-        return self.add_port(MessageSink, *args, **kwargs))
+        return self.add_port(MessageSink, *args, **kwargs)
 
     def add_message_source(self, *args, **kwargs):
-        return self.add_port(MessageSource, *args, **kwargs))
+        return self.add_port(MessageSource, *args, **kwargs)
 
     def add_param(self, *args, **kwargs):
         """Add a param to this block
@@ -106,7 +106,7 @@ class BaseBlock(Element):
         """
         if args and isinstance(args[0], Param):
             param = args[0]
-        elif args and issubclass(args[0], Param)
+        elif args and issubclass(args[0], Param):
             param = args[0](*args[1:], **kwargs)
         elif issubclass(kwargs.get('cls', None), Param):
             param = kwargs.pop('cls')(*args, **kwargs)

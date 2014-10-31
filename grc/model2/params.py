@@ -128,7 +128,7 @@ class OptionsParam(Param):
     # careful: same empty dict for all instances
     Option = partial(namedtuple("Option", "name value extra"), extra={})
 
-    def __init__(self, parent, {name, key, vtype, options, default=None, allow_arbitrary_values=False):
+    def __init__(self, parent, name, key, vtype, options, default=None, allow_arbitrary_values=False):
         super(OptionsParam, self).__init__(parent, name, key, vtype, default)
 
         self._options = options

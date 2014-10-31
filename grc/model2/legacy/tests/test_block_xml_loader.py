@@ -17,42 +17,21 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
-import tempfile
+from os import path
+import glob
 
-from .. import load_category_tree_xml
+from .. import load_block_xml
 
 
-category_tree_test_data = """
-<cat>
-    <name></name>
-    <cat>
-        <name>c</name>
-        <cat>
-            <name>d</name>
-            <block>key11</block>
-        </cat>
-        <block>key1</block>
-    </cat>
-    <cat>
-        <name>b</name>
-        <block>key2</block>
-        <block>key3</block>
-    </cat>
-    <block>key4</block>
-</cat>"""
+def iter_test_files():
+    test_file_dir = path.join(path.dirname(__file__), 'resources')
+    for filename in glob.iglob(path.join(test_file_dir, '*.xml')):
+        with open(filename) as fp:
+            yield fp
 
 
 def test_category_tree_xml():
-    with tempfile.TemporaryFile() as fp:
-        fp.write(category_tree_test_data)
-        fp.seek(0)
-        category_iter = load_category_tree_xml(fp)
-        assert ('key11', ['c', 'd']) == category_iter.next()
-        assert ('key1', ['c']) == category_iter.next()
-        assert ('key2', ['b']) == category_iter.next()
-        assert ('key3', ['b']) == category_iter.next()
-        assert ('key4', []) == category_iter.next()
-        try:
-            category_iter.next()
-        except Exception as e:
-            assert isinstance(e, StopIteration)
+    for fp in iter_test_files():
+        BlockClass = load_block_xml(fp)
+        print BlockClass
+

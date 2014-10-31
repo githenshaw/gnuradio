@@ -17,82 +17,68 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+from lxml import etree
+from os import path
+from mako.template import Template
 
 from .. blocks import Block
-from . import ParseXML
+from .. params import OptionsParam
+from .. ports import MessageSink, StreamSink
 
+from . block_category_loader import xml_to_nested_data
 
-
-BLOCK_DTD = 'block.dtd'
+BLOCK_DTD = etree.DTD(path.join(path.dirname(__file__), 'block.dtd'))
 
 
 def load_block_xml(xml_file):
     """Load block description from xml file"""
+    try:
+        xml = etree.parse(xml_file).getroot()
+        BLOCK_DTD.validate(xml)
+    except etree.LxmlError:
+        return
 
-    # validate and import
-    ParseXML.validate_dtd(xml_file, BLOCK_DTD)
-    n = ParseXML.from_file(xml_file).find('block')
-
-
+    n = xml_to_nested_data(xml)[1]
     n['block_wrapper_path'] = xml_file  # inject block wrapper path
-    if 'domain' not in n:
-        n['domain'] = None
 
-    # get block instance and add it to the list of blocks
-    block = construct_block_class_from_nested_data(n)
+    return construct_block_class_from_nested_data(n)
 
-    return block
 
-BLOCK_TEMPLATE = """\
+BLOCK_TEMPLATE = Template("""\
 class XMLBlock(Block):
-    key    = "${ n['key'][0] }"
-    name   = "${ n['name'][0] }"
+    key = "${ key }"
+    name = "${ name }"
 
-    import_template = "${ n['import'][0] }"
-    make_template   = "${ n['make'][0] }"
+    import_template = "${ import_template }"
+    make_template = "${ make_template }"
 
     def setup(self, **kwargs):
         super(XMLBlock, self).setup(**kwargs)
 
         # params
-        % for param_n in n['params']:
-        self.add_param(
-            key = "${ param_n['key'] }",
-            name = "${ param_n['name'] }",
-            vtype = ${  },
-            default = ${ param_n['value'] },
-        )
+        % for kwargs in params:
+        self.add_param(${ repr(kwargs) })
         % endfor
 
         # sinks
-        % for sink_n in n['sink']:
-        self.add_port(
-            name = ${  },
-            type = ${  },
-            vlen = ${  },
-            nports = ${  },
-            optional = ${  },
-            hide = ${  },
-        )
+        % for kwargs in sinks:
+        self.add_port()
         % endfor
 
         # sources
-
-"""
+""")
 
 
 def construct_block_class_from_nested_data(nested_data):
     n = nested_data
 
-    for key in 'key name make import'.split():
-        n[key] = n[key][0]
-
     params_raw = {
         param_n['key'][0]: {
             key: value[0]
-            for key, value in params_n.iteritems()
-        for params_n in n.get('params', [])
+            for key, value in param_n.iteritems()
+        } for param_n in n.get('param', [])
     }
+
     def resolve_template(expr):
         if '$' in expr:  # template
             try:
@@ -116,26 +102,25 @@ def construct_block_class_from_nested_data(nested_data):
         if vtype == 'enum':
             vtype = 'raw'
             param['cls'] = OptionsParam
-            param['options'] = tuple(
-                tuple(
-                    option_n['key'][0],
-                    option_n['name'][0],
-                    dict(opt_n.split(':', 2)
-                        for (opt_n,) in option_n.get('opt', []) if ':' in opt_n
-                    )
-                ) for option_n in params_.get(['options', [])
-            )
+            param['options'] = [[
+                option_n['key'][0], option_n['name'][0],
+                dict(opt_n.split(':', 2)
+                    for (opt_n,) in option_n.get('opt', []) if ':' in opt_n
+                )
+            ] for option_n in param_n.get('options', [])]
         param['vtype'] = vtype or 'raw'
         if set_from: rewrites['vtype'] = set_from
         param['category'] = param_n.get('tab', [''])[0]
         #todo: parse hide tag
         value = param_n.get('value', None)[0]
-        if value: param['value'] = value
+        if value:
+            param['value'] = value
+
         params.append(param)
 
     sinks = []
-    for sink_n in n['sinks']:
-        sink = {}
+    for sink_n in n.get('sinks', []):
+        sink = dict()
         sink['name'] = sink_n['name'][0]
         dtype, set_from = resolve_template(sink_n['type'][0])
         if dtype == 'message':
@@ -148,20 +133,16 @@ def construct_block_class_from_nested_data(nested_data):
 
         sinks.append(sink)
 
-    class XMLDefinedBlock(Block):
-        key = n['key']
-        name = n['name']
+    return BLOCK_TEMPLATE.render(
+        key=n['key'][0],
+        name=n['name'][0],
 
-        make_template = n['make']
-        import_templdate = n['import']
+        make_template=n['make'][0],
+        import_template=n['import'][0],
 
-        def setup(self, **kwargs):
-            super(XMLBlock, self).setup(**kwargs)
-
-            for param, rewrites in params:
-                self.add_param(**param).on_rewrite(*rewrites)
-
-    return 1
+        params=params,
+        sinks=[],
+    )
 
 
 
