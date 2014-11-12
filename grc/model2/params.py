@@ -88,9 +88,8 @@ class IdParam(Param):
     _id_matcher = re.compile('^[a-z|A-Z]\w*$')
 
     def __init__(self, parent):
-        super(IdParam, self).__init__(
-            parent, 'ID', 'id', str, default=self._get_unique_block_id()
-        )
+        super(IdParam, self).__init__(parent, 'ID', 'id', str)
+        self.default = self._get_unique_block_id()
 
     def _get_unique_block_id(self):
         """get a unique block id within the flow-graph by trail&error"""

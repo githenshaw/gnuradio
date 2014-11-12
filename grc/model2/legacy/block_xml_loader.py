@@ -23,7 +23,7 @@ from mako.template import Template
 
 from .. blocks import Block
 from .. params import OptionsParam
-from .. ports import MessageSink, StreamSink
+from .. ports import MessagePort
 
 from . block_category_loader import xml_to_nested_data
 
@@ -125,12 +125,12 @@ def construct_block_class_from_nested_data(nested_data):
         dtype, set_from = resolve_template(sink_n['type'][0])
         if dtype == 'message':
             sink['key'] = sink['name']
-            sink['cls'] = MessageSink
+            sink['cls'] = MessagePort
         else:
             sink['dtype'] = dtype
             vlen = sink_n.get('vlen', [])[0]
             if vlen: sink['vlen'] = vlen
-
+        sink['direction'] = 'sink'
         sinks.append(sink)
 
     return BLOCK_TEMPLATE.render(

@@ -19,12 +19,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
 from collections import OrderedDict
-from itertools import chain
+from itertools import chain, ifilter, imap
 
 from . import exceptions
 from . base import Element
 from . params import Param, IdParam
-from . ports import BasePort, MessageSink, MessageSource, StreamSink, StreamSource
+from . ports import BasePort, StreamPort, MessagePort
 
 
 class BaseBlock(Element):
@@ -37,18 +37,17 @@ class BaseBlock(Element):
     def __init__(self, parent, **kwargs):
         super(BaseBlock, self).__init__(parent)
 
-        self._ports = {  # the raw/unexpanded/hidden ports are held here
-            'sources': [],  # a dict to hold the source ports this block, indexed by key
-            'sinks': [],  # a dict to hold the sink ports this block, indexed by key
-        }
-
         self.params = OrderedDict()
         self.add_param(IdParam(self))
-        self.add_param(key='_enabled', name='Enabled', value_type=bool, default_value=True)
+        self.add_param(name='Enabled', key='_enabled', vtype=bool, default=True)
 
         self.params_namespace = {}  # dict of evaluated params
 
-        # a list of sink ports currently visible (think hidden ports, bus ports, nports)
+        # the raw/unexpanded/hidden port objects are held here
+        self._sources = []
+        self._sinks = []
+
+        # lists of ports currently visible (think hidden ports, bus ports, nports)
         self.sources = []  # filled / updated by rewrite()
         self.sinks = []
 
@@ -65,7 +64,7 @@ class BaseBlock(Element):
         """unique identifier for this block within the flow-graph"""
         return self.params['id'].value
 
-    def add_port(self, cls, *args, **kwargs):
+    def add_port(self, cls, direction, *args, **kwargs):
         """Add a port to this block
 
         Args:
@@ -80,22 +79,29 @@ class BaseBlock(Element):
             raise ValueError("Excepted an instance of BasePort")
 
         try:
-            self._ports[port.direction].append(port)
+            {
+                'sink': self._sinks,
+                'source': self._sources
+            }[direction].append(port)
         except KeyError:
             raise exceptions.BlockSetupException("Unknown port direction")
         return port
 
-    def add_stream_sink(self, *args, **kwargs):
-        return self.add_port(StreamSink, *args, **kwargs)
+    def add_stream_sink(self, name, enabled=True, nports=None, dtype=None, vlen=1):
+        return self.add_port(
+            StreamPort, 'sink', name, enabled, nports, dtype, vlen
+        )
 
-    def add_stream_source(self, *args, **kwargs):
-        return self.add_port(StreamSource, *args, **kwargs)
+    def add_stream_source(self, name, enabled=True, nports=None, dtype=None, vlen=1):
+        return self.add_port(
+            StreamPort, 'source', name, enabled, nports, dtype, vlen
+        )
 
-    def add_message_sink(self, *args, **kwargs):
-        return self.add_port(MessageSink, *args, **kwargs)
+    def add_message_sink(self, name, enabled=True, nports=None, key=None):
+        return self.add_port(MessagePort, 'sink', name, enabled, nports, key)
 
-    def add_message_source(self, *args, **kwargs):
-        return self.add_port(MessageSource, *args, **kwargs)
+    def add_message_source(self, name, enabled=True, nports=None, key=None):
+        return self.add_port(MessagePort, 'source', name, enabled, nports, key)
 
     def add_param(self, *args, **kwargs):
         """Add a param to this block
@@ -108,27 +114,37 @@ class BaseBlock(Element):
             param = args[0]
         elif args and issubclass(args[0], Param):
             param = args[0](*args[1:], **kwargs)
-        elif issubclass(kwargs.get('cls', None), Param):
+        elif issubclass(kwargs.get('cls', object), Param):
             param = kwargs.pop('cls')(*args, **kwargs)
         else:
-            param = Param(*args, **kwargs)
+            param = Param(self, *args, **kwargs)
         key = str(param.key)
         if key in self.params:
             raise exceptions.BlockSetupException("Param key '{}' not unique".format(key))
+        self.params[key] = param
+        return param
 
     def rewrite(self):
         """Update the blocks ports"""
-        # todo: evaluate params
         self.params_namespace.clear()
         for key, param in self.params.iteritems():
             self.params_namespace[key] = param.evaluated
 
-        # todo: rewrite ports
-        for port in chain(self._ports['sinks'], self._ports['sources']):
-            port.rewrite()
+        port_list_mappings = ((self.sinks, self._sinks), (self.sources, self._sources))
+        for ports, ports_raw in port_list_mappings:
+            ports_current = list(ports)  # keep current list of ports
+            del ports[:]  # reset list
+            for port in ports_raw:
+                port.rewrite()
+                if port.enabled:
+                    # re-add ports and their clones
+                    ports.append(port)
+                    ports += port.clones
+                elif port in ports_current:
+                    # remove connections from ports that were disabled
+                    port.disconnect()
 
-        # todo: expand nports, form busses, handle port hiding
-
+        # todo: form busses
         #super(BaseBlock, self).rewrite()  # todo: should I even call this?
 
 
