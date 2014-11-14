@@ -10,15 +10,25 @@
         <value>1</value>
         <type>int</type>
     </param>
+    <param>
+        <name>Vec Length</name>
+        <key>out_type</key>
+        <value>complex</value>
+        <type>string</type>
+    </param>
     <check>$vlen &gt; 0</check>
     <sink>
         <name>in</name>
         <type>complex</type>
         <vlen>$vlen</vlen>
     </sink>
+    <sink>
+        <name>in2</name>
+        <type>message</type>
+    </sink>
     <source>
         <name>out</name>
-        <type>float</type>
+        <type>$out_type</type>
         <vlen>$vlen</vlen>
     </source>
 </block>

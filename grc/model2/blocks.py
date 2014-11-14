@@ -19,7 +19,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
 from collections import OrderedDict
-from itertools import chain, ifilter, imap
 
 from . import exceptions
 from . base import Element

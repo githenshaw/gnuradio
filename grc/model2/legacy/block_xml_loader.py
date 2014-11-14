@@ -21,10 +21,6 @@ from lxml import etree
 from os import path
 from mako.template import Template
 
-from .. blocks import Block
-from .. params import OptionsParam
-from .. ports import MessagePort
-
 from . block_category_loader import xml_to_nested_data
 
 BLOCK_DTD = etree.DTD(path.join(path.dirname(__file__), 'block.dtd'))
@@ -45,6 +41,20 @@ def load_block_xml(xml_file):
 
 
 BLOCK_TEMPLATE = Template("""\
+<%!
+    def to_func_args(kwargs):
+        return ", ".join(
+            "{}={}".format(key, repr(value))
+            for key, value in kwargs.iteritems()
+        )
+%>
+<%def name="on_rewrite(rewrites)">\\
+% if rewrites:
+.on_rewrite(
+            ${ to_func_args(rewrites) }
+        )\\
+% endif
+</%def>
 class XMLBlock(Block):
     key = "${ key }"
     name = "${ name }"
@@ -56,38 +66,69 @@ class XMLBlock(Block):
         super(XMLBlock, self).setup(**kwargs)
 
         # params
-        % for kwargs in params:
-        self.add_param(${ repr(kwargs) })
+        % for kwargs, rewrites in params:
+        self.add_param(${ to_func_args(kwargs) })${ on_rewrite(rewrites) }
         % endfor
 
         # sinks
-        % for kwargs in sinks:
-        self.add_port()
+        % for method, kwargs, rewrites in sinks:
+        self.${ method }(${ to_func_args(kwargs) })${ on_rewrite(rewrites) }
         % endfor
 
         # sources
+        % for method, kwargs, rewrites in sources:
+        self.${ method }(${ to_func_args(kwargs) })${ on_rewrite(rewrites) }
+        % endfor
 """)
 
 
-def construct_block_class_from_nested_data(nested_data):
-    n = nested_data
+class Resolver(object):
 
+    def __init__(self, block_n):
+        self.params = {
+            param_n['key'][0]: param_n['value'][0]
+            for param_n in block_n.get('param', [])
+        }
+        self.collected_rewrites = {}
+
+    def pop_rewrites(self):
+        rewrites = self.collected_rewrites
+        self.collected_rewrites = {}
+        return rewrites
+
+    def eval(self, key, expr):
+        if '$' in expr:  # template
+            try:
+                param_key = expr[1:]
+                default = self.params[param_key] # simple subst
+                self.collected_rewrites[key] = param_key
+                return default
+            except KeyError:
+                pass
+            # todo parse/eval advanced template
+        return expr
+
+    def get(self, namespace, key, key2=None):
+        expr = self.get_raw(namespace, key)
+        return self.eval(key2 or key, expr) if expr else expr
+
+    @staticmethod
+    def get_raw(namespace, key):
+        items = namespace.get(key, [None])
+        if not isinstance(items, str):
+            items = items[0]
+        return items
+
+
+def construct_block_class_from_nested_data(nested_data):
+    block_n = nested_data
+    resolver = Resolver(block_n)
     params_raw = {
         param_n['key'][0]: {
             key: value[0]
             for key, value in param_n.iteritems()
-        } for param_n in n.get('param', [])
+        } for param_n in block_n.get('param', [])
     }
-
-    def resolve_template(expr):
-        if '$' in expr:  # template
-            try:
-                param = params_raw[expr[1:]] # simple subst
-                return param.get('value', None), param['key']
-            except KeyError:
-                pass
-            # todo parse/eval advanced template
-        return expr, None
 
     def set_optional(d, key, source, skey=None):
         value = source.get(skey or key, [None])[0]
@@ -95,53 +136,60 @@ def construct_block_class_from_nested_data(nested_data):
 
     params = []
     for key, param_n in params_raw.iteritems():
-        param, rewrites = {}, {}
-        param['key'] = param_n['key'][0]
-        param['name'] = param_n['name'][0]
-        vtype, set_from = resolve_template(param_n.get('type', ['raw'])[0])
+        kwargs = {}
+        kwargs['key'] = resolver.get(param_n, 'key')
+        kwargs['name'] = resolver.get(param_n, 'name')
+        vtype = resolver.get(param_n, 'type', 'vtype')
         if vtype == 'enum':
             vtype = 'raw'
-            param['cls'] = OptionsParam
-            param['options'] = [[
+            kwargs['cls'] = 'OptionsParam'
+            kwargs['options'] = [[
                 option_n['key'][0], option_n['name'][0],
                 dict(opt_n.split(':', 2)
                     for (opt_n,) in option_n.get('opt', []) if ':' in opt_n
                 )
             ] for option_n in param_n.get('options', [])]
-        param['vtype'] = vtype or 'raw'
-        if set_from: rewrites['vtype'] = set_from
-        param['category'] = param_n.get('tab', [''])[0]
+        kwargs['vtype'] = vtype or 'raw'
+
+        kwargs['category'] = resolver.get(param_n, 'tab') or ''
         #todo: parse hide tag
-        value = param_n.get('value', None)[0]
+        value = resolver.get_raw(param_n, 'value')
         if value:
-            param['value'] = value
+            kwargs['value'] = value
 
-        params.append(param)
+        params.append((kwargs, resolver.pop_rewrites()))
 
-    sinks = []
-    for sink_n in n.get('sinks', []):
-        sink = dict()
-        sink['name'] = sink_n['name'][0]
-        dtype, set_from = resolve_template(sink_n['type'][0])
-        if dtype == 'message':
-            sink['key'] = sink['name']
-            sink['cls'] = MessagePort
-        else:
-            sink['dtype'] = dtype
-            vlen = sink_n.get('vlen', [])[0]
-            if vlen: sink['vlen'] = vlen
-        sink['direction'] = 'sink'
-        sinks.append(sink)
+    def get_ports(direction):
+        ports = []
+        for n in block_n.get(direction, []):
+            method_name = "add_stream_" + direction
+            kwargs = dict()
+
+            kwargs['name'] = n['name'][0]
+
+            dtype = resolver.get(n, 'type', 'dtype')
+            if dtype == 'message':
+                method_name = "add_message_" + direction
+                kwargs['key'] = kwargs['name']
+            else:
+                kwargs['dtype'] = dtype
+                vlen = resolver.get(n, 'vlen')
+                if vlen:
+                    kwargs['vlen'] = int(vlen)
+
+            ports.append((method_name, kwargs, resolver.pop_rewrites()))
+        return ports
 
     return BLOCK_TEMPLATE.render(
-        key=n['key'][0],
-        name=n['name'][0],
+        key=block_n['key'][0],
+        name=block_n['name'][0],
 
-        make_template=n['make'][0],
-        import_template=n['import'][0],
+        make_template=block_n['make'][0],
+        import_template=block_n['import'][0],
 
         params=params,
-        sinks=[],
+        sinks=get_ports('sink'),
+        sources=get_ports('source'),
     )
 
 
