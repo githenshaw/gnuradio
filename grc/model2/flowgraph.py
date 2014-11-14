@@ -61,11 +61,13 @@ class FlowGraph(Element):
         else:
             raise exceptions.BlockException("")
         self.blocks.append(block)
+        return block
 
     def make_connection(self, endpoint_a, endpoint_b):
         """Add a connection between the ports of two blocks"""
         connection = Connection(self, endpoint_a, endpoint_b)
         self.connections.append(connection)
+        return connection
 
     def remove(self, elements):
         for element in elements:

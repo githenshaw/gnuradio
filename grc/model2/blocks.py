@@ -146,6 +146,21 @@ class BaseBlock(Element):
         # todo: form busses
         #super(BaseBlock, self).rewrite()  # todo: should I even call this?
 
+    def load(self, state):
+        for key, param in self.params.iteritems():
+            try:
+                param.value = state[key]
+                self.rewrite()
+            except KeyError:
+                pass  # no sate info for this param
+        # todo: parse GUI state info
+
+    def save(self):
+        state = {
+            key: param.value for key, param in self.params.iteritems()
+        }
+        return state
+
 
 class Block(BaseBlock):
     """A regular block (not a pad, virtual sink/source, variable)"""

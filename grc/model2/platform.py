@@ -24,7 +24,7 @@ from itertools import imap
 from collections import defaultdict
 
 from . _consts import BLOCK_CLASS_FILE_EXTENSION, BLOCK_XML_EXTENSION, BLOCK_TREE_EXTENSION
-from . import legacy
+from . import legacy, FlowGraph
 from . types import ParamVType, PortDType
 
 
@@ -151,3 +151,14 @@ class Platform(object):
             raise Exception("")
         for name in port_dtype.names:
             cls.port_dtypes[name] = port_dtype
+
+    def flowgraph_from_nested_data(self, n):
+        fg = FlowGraph(self)
+        for blk in n.get('block', []):
+            fg.add_block(blk['key']).load(blk.get('param', []))
+        for con in n.get('connection', []):
+            fg.make_connection(
+                (con['source_block_id'], con['source_key']),
+                (con['sink_block_id'], con['sink_key'])
+            )
+        return fg
